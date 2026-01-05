@@ -1,206 +1,38 @@
-2025-12-24T10:30:38.454Z [astro-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:30:38.459Z [astro-service] info: Astro service listening on http://localhost:8002 {"context":"Bootstrap"}
-2025-12-24T10:30:38.455Z [astro-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.456Z [astro-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.456Z [astro-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.456Z [astro-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.457Z [astro-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.457Z [astro-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:30:38.457Z [astro-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:30:38.458Z [astro-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:30:38.860Z [auth-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:30:38.865Z [auth-service] info: Auth service listening on http://localhost:8001 {"context":"Bootstrap"}
-2025-12-24T10:30:38.861Z [auth-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.862Z [auth-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.862Z [auth-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.862Z [auth-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.863Z [auth-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:30:38.863Z [auth-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:30:38.863Z [auth-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:30:38.863Z [auth-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:31:52.062Z [astro-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:31:52.067Z [astro-service] info: Astro service listening on http://localhost:8002 {"context":"Bootstrap"}
-2025-12-24T10:31:52.063Z [astro-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.064Z [astro-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.064Z [astro-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.064Z [astro-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.065Z [astro-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.065Z [astro-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:31:52.065Z [astro-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:31:52.066Z [astro-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:31:52.422Z [auth-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:31:52.425Z [auth-service] info: Auth service listening on http://localhost:8001 {"context":"Bootstrap"}
-2025-12-24T10:31:52.423Z [auth-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.423Z [auth-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.423Z [auth-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.423Z [auth-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.424Z [auth-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:31:52.424Z [auth-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:31:52.424Z [auth-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:31:52.424Z [auth-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:35:09.026Z [astro-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:35:09.030Z [astro-service] info: Astro service listening on http://localhost:8002 {"context":"Bootstrap"}
-2025-12-24T10:35:09.027Z [astro-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.028Z [astro-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.028Z [astro-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.028Z [astro-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.028Z [astro-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.029Z [astro-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:35:09.029Z [astro-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:35:09.029Z [astro-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:35:09.406Z [auth-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:35:09.409Z [auth-service] info: Auth service listening on http://localhost:8001 {"context":"Bootstrap"}
-2025-12-24T10:35:09.406Z [auth-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.407Z [auth-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.407Z [auth-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.407Z [auth-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.407Z [auth-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:09.408Z [auth-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:35:09.408Z [auth-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:35:09.408Z [auth-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:35:22.394Z [astro-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:35:22.398Z [astro-service] info: Astro service listening on http://localhost:8002 {"context":"Bootstrap"}
-2025-12-24T10:35:22.395Z [astro-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.395Z [astro-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.396Z [astro-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.396Z [astro-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.396Z [astro-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.396Z [astro-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:35:22.396Z [astro-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:35:22.397Z [astro-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:35:22.748Z [auth-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:35:22.752Z [auth-service] info: Auth service listening on http://localhost:8001 {"context":"Bootstrap"}
-2025-12-24T10:35:22.749Z [auth-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.750Z [auth-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.750Z [auth-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.750Z [auth-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.750Z [auth-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:35:22.750Z [auth-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:35:22.751Z [auth-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:35:22.751Z [auth-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:49:28.409Z [astro-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:49:28.413Z [astro-service] info: Astro service listening on http://localhost:8002 {"context":"Bootstrap"}
-2025-12-24T10:49:28.410Z [astro-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.410Z [astro-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.410Z [astro-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.411Z [astro-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.411Z [astro-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.411Z [astro-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:49:28.412Z [astro-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:49:28.412Z [astro-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:49:28.811Z [auth-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:49:28.814Z [auth-service] info: Auth service listening on http://localhost:8001 {"context":"Bootstrap"}
-2025-12-24T10:49:28.811Z [auth-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.812Z [auth-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.812Z [auth-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.812Z [auth-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.812Z [auth-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:49:28.813Z [auth-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:49:28.813Z [auth-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:49:28.813Z [auth-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:50:37.246Z [auth-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:50:37.254Z [auth-service] info: Auth service listening on http://localhost:8001 {}
-2025-12-24T10:50:37.248Z [auth-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.249Z [auth-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.250Z [auth-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.250Z [auth-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.251Z [auth-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.251Z [auth-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:50:37.252Z [auth-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:50:37.252Z [auth-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:50:37.702Z [astro-service] info: Starting Nest application... {"context":"NestFactory"}
-2025-12-24T10:50:37.706Z [astro-service] info: Astro service listening on http://localhost:8002 {}
-2025-12-24T10:50:37.703Z [astro-service] info: ConfigHostModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.703Z [astro-service] info: WinstonModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.703Z [astro-service] info: AppModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.704Z [astro-service] info: ConfigModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.704Z [astro-service] info: LoggerModule dependencies initialized {"context":"InstanceLoader"}
-2025-12-24T10:50:37.704Z [astro-service] info: AppController {/}: {"context":"RoutesResolver"}
-2025-12-24T10:50:37.704Z [astro-service] info: Mapped {/health, GET} route {"context":"RouterExplorer"}
-2025-12-24T10:50:37.705Z [astro-service] info: Nest application successfully started {"context":"NestApplication"}
-2025-12-24T10:55:10.918Z [auth-service] info: Starting Nest application...
-2025-12-24T10:55:10.925Z [auth-service] info: Auth service listening on http://localhost:8001
-2025-12-24T10:55:10.921Z [auth-service] info: ConfigHostModule dependencies initialized
-2025-12-24T10:55:10.922Z [auth-service] info: WinstonModule dependencies initialized
-2025-12-24T10:55:10.922Z [auth-service] info: AppModule dependencies initialized
-2025-12-24T10:55:10.922Z [auth-service] info: ConfigModule dependencies initialized
-2025-12-24T10:55:10.923Z [auth-service] info: LoggerModule dependencies initialized
-2025-12-24T10:55:10.923Z [auth-service] info: AppController {/}:
-2025-12-24T10:55:10.923Z [auth-service] info: Mapped {/health, GET} route
-2025-12-24T10:55:10.924Z [auth-service] info: Nest application successfully started
-2025-12-24T10:55:10.941Z [astro-service] info: Starting Nest application...
-2025-12-24T10:55:10.945Z [astro-service] info: Astro service listening on http://localhost:8002
-2025-12-24T10:55:10.942Z [astro-service] info: ConfigHostModule dependencies initialized
-2025-12-24T10:55:10.943Z [astro-service] info: WinstonModule dependencies initialized
-2025-12-24T10:55:10.943Z [astro-service] info: AppModule dependencies initialized
-2025-12-24T10:55:10.943Z [astro-service] info: ConfigModule dependencies initialized
-2025-12-24T10:55:10.943Z [astro-service] info: LoggerModule dependencies initialized
-2025-12-24T10:55:10.943Z [astro-service] info: AppController {/}:
-2025-12-24T10:55:10.944Z [astro-service] info: Mapped {/health, GET} route
-2025-12-24T10:55:10.944Z [astro-service] info: Nest application successfully started
-[astro-service] info: Starting Nest application...
-[astro-service] info: Astro service listening on http://localhost:8002
-[astro-service] info: ConfigHostModule dependencies initialized
-[astro-service] info: WinstonModule dependencies initialized
-[astro-service] info: AppModule dependencies initialized
-[astro-service] info: ConfigModule dependencies initialized
-[astro-service] info: LoggerModule dependencies initialized
-[astro-service] info: AppController {/}:
-[astro-service] info: Mapped {/health, GET} route
-[astro-service] info: Nest application successfully started
-[auth-service] info: Starting Nest application...
-[auth-service] info: Auth service listening on http://localhost:8001
-[auth-service] info: ConfigHostModule dependencies initialized
-[auth-service] info: WinstonModule dependencies initialized
-[auth-service] info: AppModule dependencies initialized
-[auth-service] info: ConfigModule dependencies initialized
-[auth-service] info: LoggerModule dependencies initialized
-[auth-service] info: AppController {/}:
-[auth-service] info: Mapped {/health, GET} route
-[auth-service] info: Nest application successfully started
-12/24/2025, 4:27:44 PM [astro-service] info: Starting Nest application...
-12/24/2025, 4:27:44 PM [astro-service] info: Astro service listening on http://localhost:8002
-12/24/2025, 4:27:44 PM [astro-service] info: ConfigHostModule dependencies initialized
-12/24/2025, 4:27:44 PM [astro-service] info: WinstonModule dependencies initialized
-12/24/2025, 4:27:44 PM [astro-service] info: AppModule dependencies initialized
-12/24/2025, 4:27:44 PM [astro-service] info: ConfigModule dependencies initialized
-12/24/2025, 4:27:44 PM [astro-service] info: LoggerModule dependencies initialized
-12/24/2025, 4:27:44 PM [astro-service] info: AppController {/}:
-12/24/2025, 4:27:44 PM [astro-service] info: Mapped {/health, GET} route
-12/24/2025, 4:27:44 PM [astro-service] info: Nest application successfully started
-12/24/2025, 4:27:44 PM [auth-service] info: Starting Nest application...
-12/24/2025, 4:27:44 PM [auth-service] info: Auth service listening on http://localhost:8001
-12/24/2025, 4:27:44 PM [auth-service] info: ConfigHostModule dependencies initialized
-12/24/2025, 4:27:44 PM [auth-service] info: WinstonModule dependencies initialized
-12/24/2025, 4:27:44 PM [auth-service] info: AppModule dependencies initialized
-12/24/2025, 4:27:44 PM [auth-service] info: ConfigModule dependencies initialized
-12/24/2025, 4:27:44 PM [auth-service] info: LoggerModule dependencies initialized
-12/24/2025, 4:27:44 PM [auth-service] info: AppController {/}:
-12/24/2025, 4:27:44 PM [auth-service] info: Mapped {/health, GET} route
-12/24/2025, 4:27:44 PM [auth-service] info: Nest application successfully started
-12/24/2025, 4:40:49 PM [auth-service] info: Starting Nest application...
-12/24/2025, 4:41:03 PM [astro-service] info: Starting Nest application...
-12/24/2025, 4:44:32 PM [auth-service] info: Starting Nest application...
-12/24/2025, 4:44:32 PM [auth-service] info: Auth service listening on http://localhost:8001
-12/24/2025, 4:44:32 PM [auth-service] info: TypeOrmModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: ConfigHostModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: WinstonModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: AppModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: ConfigModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: LoggerModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: TypeOrmCoreModule dependencies initialized
-12/24/2025, 4:44:32 PM [auth-service] info: AppController {/}:
-12/24/2025, 4:44:32 PM [auth-service] info: Mapped {/health, GET} route
-12/24/2025, 4:44:32 PM [auth-service] info: Nest application successfully started
-12/24/2025, 4:44:41 PM [astro-service] info: Starting Nest application...
-12/24/2025, 4:44:41 PM [astro-service] info: Astro service listening on http://localhost:8002
-12/24/2025, 4:44:41 PM [astro-service] info: TypeOrmModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: ConfigHostModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: WinstonModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: AppModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: ConfigModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: LoggerModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: TypeOrmCoreModule dependencies initialized
-12/24/2025, 4:44:41 PM [astro-service] info: AppController {/}:
-12/24/2025, 4:44:41 PM [astro-service] info: Mapped {/health, GET} route
-12/24/2025, 4:44:41 PM [astro-service] info: Nest application successfully started
+1/5/2026, 6:15:19 PM [astro-service] info: Starting Nest application...
+1/5/2026, 6:15:19 PM [astro-service] info: Astro service listening on http://localhost:8002
+1/5/2026, 6:15:19 PM [astro-service] info: TypeOrmModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: ConfigHostModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: WinstonModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: AppModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: ConfigModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: LoggerModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: TypeOrmCoreModule dependencies initialized
+1/5/2026, 6:15:19 PM [astro-service] info: AppController {/}:
+1/5/2026, 6:15:19 PM [astro-service] info: Mapped {/health, GET} route
+1/5/2026, 6:15:19 PM [astro-service] info: Nest application successfully started
+1/5/2026, 6:15:19 PM [auth-service] info: Starting Nest application...
+1/5/2026, 6:15:19 PM [auth-service] info: Auth service listening on http://localhost:8001
+1/5/2026, 6:15:19 PM [auth-service] info: TypeOrmModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: PassportModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: ConfigHostModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: WinstonModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: AppModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: ConfigModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: LoggerModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: JwtModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: TypeOrmCoreModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: TypeOrmModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: TypeOrmModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: TypeOrmModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: UsersModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: UserDetailsModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: GuestsModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: AuthModule dependencies initialized
+1/5/2026, 6:15:19 PM [auth-service] info: AppController {/}:
+1/5/2026, 6:15:19 PM [auth-service] info: Mapped {/health, GET} route
+1/5/2026, 6:15:19 PM [auth-service] info: AuthController {/api/v1/auth}:
+1/5/2026, 6:15:19 PM [auth-service] info: Mapped {/api/v1/auth/signup, POST} route
+1/5/2026, 6:15:19 PM [auth-service] info: Mapped {/api/v1/auth/login, POST} route
+1/5/2026, 6:15:19 PM [auth-service] info: GuestsController {/api/v1/guests}:
+1/5/2026, 6:15:19 PM [auth-service] info: Mapped {/api/v1/guests, POST} route
+1/5/2026, 6:15:19 PM [auth-service] info: Nest application successfully started

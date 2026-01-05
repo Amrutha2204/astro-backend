@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { LoggerModule } from '@astro/logger';
+import { AuthModule } from '../auth/auth.module';
+import { GuestsModule } from '../guests/guests.module';
+import { UsersModule } from '../users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -26,6 +29,9 @@ import { AppService } from './app.service';
         synchronize: false,
       }),
     }),
+    UsersModule,
+    AuthModule,
+    GuestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
