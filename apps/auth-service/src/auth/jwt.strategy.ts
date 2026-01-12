@@ -17,11 +17,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET') ?? 'default_secret',
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: JwtPayload, request: any) {
-    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+  async validate(request: any, payload: JwtPayload) {
+    const authHeader = request.headers?.authorization;
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : null;
 
     if (token) {
       try {

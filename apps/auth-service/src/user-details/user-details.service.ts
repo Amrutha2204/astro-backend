@@ -19,6 +19,13 @@ export class UserDetailsService {
     });
   }
 
+  async findByUserId(userId: string) {
+    return this.userDetailsRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+  }
+
   async createForUser(
     user: User,
     payload: { dob: Date; birthPlace: string; birthTime?: string },

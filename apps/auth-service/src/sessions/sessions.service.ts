@@ -1,15 +1,14 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
 import { Repository, LessThan } from 'typeorm';
 import { Session } from '../entities/session.entity';
-import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class SessionsService {
   constructor(
     @InjectRepository(Session)
     private readonly sessionRepository: Repository<Session>,
-    private readonly jwtService: JwtService,
   ) {}
 
   async createSession(userId: string, token: string, expiresIn: string): Promise<Session> {
@@ -17,6 +16,7 @@ export class SessionsService {
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
     const session = this.sessionRepository.create({
+      id: randomUUID(),
       token,
       userId,
       expiresAt,
