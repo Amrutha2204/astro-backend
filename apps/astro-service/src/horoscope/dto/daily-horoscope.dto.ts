@@ -1,20 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsDateString } from 'class-validator';
-
-export enum ZodiacSign {
-  Aries = 'aries',
-  Taurus = 'taurus',
-  Gemini = 'gemini',
-  Cancer = 'cancer',
-  Leo = 'leo',
-  Virgo = 'virgo',
-  Libra = 'libra',
-  Scorpio = 'scorpio',
-  Sagittarius = 'sagittarius',
-  Capricorn = 'capricorn',
-  Aquarius = 'aquarius',
-  Pisces = 'pisces',
-}
+import { ZodiacSign } from '../../common/utils/zodiac.util';
 
 export class DailyHoroscopeDto {
   @ApiProperty({

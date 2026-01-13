@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DailyHoroscopeDto, ZodiacSign } from './dto/daily-horoscope.dto';
+import { DailyHoroscopeDto } from './dto/daily-horoscope.dto';
 import { getZodiacSignFromDateOfBirth } from '../common/utils/zodiac.util';
 
 interface AccessTokenResponse {
@@ -57,7 +57,7 @@ export class HoroscopeService {
       const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${credentials}`,
+          Authorization: `Basic ${credentials}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: formData.toString(),
@@ -80,8 +80,7 @@ export class HoroscopeService {
 
       const tokenData: AccessTokenResponse = await response.json();
       this.accessToken = tokenData.access_token;
-      this.tokenExpiry =
-        Date.now() + (tokenData.expires_in - 60) * 1000;
+      this.tokenExpiry = Date.now() + (tokenData.expires_in - 60) * 1000;
 
       return this.accessToken;
     } catch (error) {
@@ -120,8 +119,8 @@ export class HoroscopeService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
         },
       });
 
@@ -166,7 +165,10 @@ export class HoroscopeService {
         throw error;
       }
 
-      this.logger.error(`Error fetching daily horoscope: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error fetching daily horoscope: ${error.message}`,
+        error.stack,
+      );
       throw new HttpException(
         'Failed to fetch daily horoscope. Please try again later.',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -241,4 +243,3 @@ export class HoroscopeService {
     }
   }
 }
-
