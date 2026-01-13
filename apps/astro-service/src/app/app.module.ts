@@ -5,6 +5,7 @@ import { join } from 'path';
 import { LoggerModule } from '@astro/logger';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { HoroscopeModule } from '../horoscope/horoscope.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AppService } from './app.service';
         synchronize: false,
       }),
     }),
+    HoroscopeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
