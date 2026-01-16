@@ -4,150 +4,62 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { KundliDto } from './dto/kundli.dto';
-
-interface AccessTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
+import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
 
 @Injectable()
 export class KundliService {
   private readonly logger = new Logger(KundliService.name);
-  private readonly apiBaseUrl = 'https://api.prokerala.com/v2';
-  private readonly clientId: string;
-  private readonly clientSecret: string;
-  private accessToken: string | null = null;
-  private tokenExpiry: number = 0;
 
-  constructor(private readonly configService: ConfigService) {
-    this.clientId = this.configService.get<string>('PROKERALA_CLIENT_ID') || '';
-    this.clientSecret =
-      this.configService.get<string>('PROKERALA_CLIENT_SECRET') || '';
-
-    if (!this.clientId || !this.clientSecret) {
-      this.logger.warn(
-        'PROKERALA_CLIENT_ID or PROKERALA_CLIENT_SECRET not configured. API calls will fail.',
-      );
-    }
-  }
-
-  private async getAccessToken(): Promise<string> {
-    if (this.accessToken && Date.now() < this.tokenExpiry) {
-      return this.accessToken;
-    }
-
-    try {
-      const tokenUrl = 'https://api.prokerala.com/token';
-      const credentials = Buffer.from(
-        `${this.clientId}:${this.clientSecret}`,
-      ).toString('base64');
-
-      const formData = new URLSearchParams();
-      formData.append('grant_type', 'client_credentials');
-
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorData.errors?.[0]?.detail ||
-          errorData.message ||
-          'Failed to authenticate with Prokerala API';
-        this.logger.error(
-          `Failed to get access token: ${response.status} - ${JSON.stringify(errorData)}`,
-        );
-        throw new HttpException(
-          `Prokerala API Authentication Error: ${errorMessage}. Please verify your PROKERALA_CLIENT_ID and PROKERALA_CLIENT_SECRET are correct and your account is activated.`,
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-
-      const tokenData: AccessTokenResponse = await response.json();
-      this.accessToken = tokenData.access_token;
-      this.tokenExpiry = Date.now() + (tokenData.expires_in - 60) * 1000;
-
-      return this.accessToken;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logger.error(
-        `Error getting access token: ${error.message}`,
-        error.stack,
-      );
-      throw new HttpException(
-        'Failed to authenticate with Prokerala API.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
+  constructor(
+    private readonly astrologyEngineService: AstrologyEngineService,
+  ) {}
 
   async getKundli(dto: KundliDto) {
     try {
-      const accessToken = await this.getAccessToken();
-
       const dobDate = new Date(`${dto.dob}T${dto.birthTime}`);
-      const datetime = dobDate.toISOString();
-      const chartType = dto.chartType || 'north-indian';
-      const coordinates = `${dto.latitude},${dto.longitude}`;
-      const ayanamsa = 1;
+      const year = dobDate.getFullYear();
+      const month = dobDate.getMonth() + 1;
+      const day = dobDate.getDate();
+      const hour = dobDate.getHours();
+      const minute = dobDate.getMinutes();
 
-      const url = new URL(`${this.apiBaseUrl}/astrology/kundli`);
-      url.searchParams.append('datetime', datetime);
-      url.searchParams.append('coordinates', coordinates);
-      url.searchParams.append('ayanamsa', ayanamsa.toString());
-      url.searchParams.append('chart_type', chartType);
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/json',
+      const vedicChart = await this.astrologyEngineService.calculateVedicChart(
+        {
+          year,
+          month,
+          day,
+          hour,
+          minute,
+          latitude: dto.latitude,
+          longitude: dto.longitude,
         },
-      });
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        this.logger.error(
-          `Prokerala API error: ${response.status} - ${JSON.stringify(errorData)}`,
-        );
-
-        if (response.status === 429) {
-          throw new HttpException(
-            'Rate limit exceeded. Please try again later.',
-            HttpStatus.TOO_MANY_REQUESTS,
-          );
-        }
-
-        if (response.status === 401) {
-          throw new HttpException(
-            'Invalid credentials. Please check your PROKERALA_CLIENT_ID and PROKERALA_CLIENT_SECRET configuration.',
-            HttpStatus.UNAUTHORIZED,
-          );
-        }
-
-        throw new HttpException(
-          `Failed to fetch kundli: ${errorData.message || response.statusText}`,
-          response.status,
-        );
-      }
-
-      const data = await response.json();
+      const moonPlanet = vedicChart.planets.find((p) => p.planet === 'Moon');
+      const sunPlanet = vedicChart.planets.find((p) => p.planet === 'Sun');
 
       return {
-        ...data.data || data,
-        source: 'Prokerala API',
+        lagna: vedicChart.lagna.sign,
+        moonSign: vedicChart.moonSign.sign,
+        sunSign: vedicChart.sunSign.sign,
+        nakshatra: moonPlanet?.nakshatra || 'Unknown',
+        pada: moonPlanet?.pada || 1,
+        chandraRasi: vedicChart.moonSign.sign,
+        sooryaRasi: vedicChart.sunSign.sign,
+        planetaryPositions: vedicChart.planets.map((p) => ({
+          planet: p.planet,
+          sign: p.sign,
+          degree: p.degree,
+          nakshatra: p.nakshatra,
+          pada: p.pada,
+        })),
+        houses: vedicChart.houses.map((h) => ({
+          house: h.house,
+          sign: h.sign,
+          degree: h.degree,
+        })),
+        source: 'Swiss Ephemeris',
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -162,4 +74,3 @@ export class KundliService {
     }
   }
 }
-

@@ -242,4 +242,125 @@ export class HoroscopeService {
       );
     }
   }
+
+  async getWeeklyHoroscope(token: string) {
+    try {
+      const userDetailsResponse = await fetch(
+        `${this.authServiceUrl}/api/v1/user-details/me`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      );
+
+      if (!userDetailsResponse.ok) {
+        throw new HttpException(
+          'Failed to fetch user details.',
+          userDetailsResponse.status,
+        );
+      }
+
+      const userDetails = await userDetailsResponse.json();
+      const dob = new Date(userDetails.dob);
+      const zodiacSign = getZodiacSignFromDateOfBirth(dob);
+
+      const weeklyPredictions = [];
+      const today = new Date();
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+        const dateString = date.toISOString().split('T')[0];
+
+        const horoscope = await this.getDailyHoroscope({
+          sign: zodiacSign,
+          date: dateString,
+        });
+
+        weeklyPredictions.push({
+          date: dateString,
+          day: date.toLocaleDateString('en-US', { weekday: 'long' }),
+          horoscope: horoscope.horoscope,
+        });
+      }
+
+      return {
+        sign: zodiacSign,
+        weekStart: today.toISOString().split('T')[0],
+        predictions: weeklyPredictions,
+        source: 'Prokerala API',
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to fetch weekly horoscope.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getMonthlyHoroscope(token: string) {
+    try {
+      const userDetailsResponse = await fetch(
+        `${this.authServiceUrl}/api/v1/user-details/me`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      );
+
+      if (!userDetailsResponse.ok) {
+        throw new HttpException(
+          'Failed to fetch user details.',
+          userDetailsResponse.status,
+        );
+      }
+
+      const userDetails = await userDetailsResponse.json();
+      const dob = new Date(userDetails.dob);
+      const zodiacSign = getZodiacSignFromDateOfBirth(dob);
+
+      const monthlyPredictions = [];
+      const today = new Date();
+
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+        const dateString = date.toISOString().split('T')[0];
+
+        const horoscope = await this.getDailyHoroscope({
+          sign: zodiacSign,
+          date: dateString,
+        });
+
+        monthlyPredictions.push({
+          date: dateString,
+          horoscope: horoscope.horoscope,
+        });
+      }
+
+      return {
+        sign: zodiacSign,
+        monthStart: today.toISOString().split('T')[0],
+        predictions: monthlyPredictions,
+        source: 'Prokerala API',
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to fetch monthly horoscope.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

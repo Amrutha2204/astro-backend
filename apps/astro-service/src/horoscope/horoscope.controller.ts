@@ -61,5 +61,49 @@ export class HoroscopeController {
     const token = authHeader.substring(7);
     return this.horoscopeService.getMyDayToday(token, date);
   }
+
+  @Get('weekly')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get personalized weekly horoscope (next 7 days)',
+  })
+  @ApiOkResponse({
+    description: 'Weekly horoscope retrieved successfully',
+  })
+  async getWeeklyHoroscope(@Request() req: any) {
+    const authHeader = req.headers?.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new HttpException(
+        'Authentication required.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const token = authHeader.substring(7);
+    return this.horoscopeService.getWeeklyHoroscope(token);
+  }
+
+  @Get('monthly')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get personalized monthly horoscope (next 30 days)',
+  })
+  @ApiOkResponse({
+    description: 'Monthly horoscope retrieved successfully',
+  })
+  async getMonthlyHoroscope(@Request() req: any) {
+    const authHeader = req.headers?.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new HttpException(
+        'Authentication required.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const token = authHeader.substring(7);
+    return this.horoscopeService.getMonthlyHoroscope(token);
+  }
 }
 

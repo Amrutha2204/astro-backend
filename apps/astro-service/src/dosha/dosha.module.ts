@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { KundliController } from './kundli.controller';
-import { KundliService } from './kundli.service';
+import { DoshaController } from './dosha.controller';
+import { DoshaService } from './dosha.service';
 import { AstrologyEngineModule } from '../astrology-engine/astrology-engine.module';
 
 @Module({
   imports: [ConfigModule, AstrologyEngineModule],
-  controllers: [KundliController],
-  providers: [KundliService],
-  exports: [KundliService],
+  controllers: [DoshaController],
+  providers: [DoshaService],
+  exports: [DoshaService],
 })
-export class KundliModule {}
+export class DoshaModule {}
 

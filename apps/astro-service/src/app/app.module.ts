@@ -11,6 +11,12 @@ import { NatalChartModule } from '../natal-chart/natal-chart.module';
 import { TransitsModule } from '../transits/transits.module';
 import { HoroscopeRuleModule } from '../horoscope-rule/horoscope-rule.module';
 import { CalendarModule } from '../calendar/calendar.module';
+import { AstrologyEngineModule } from '../astrology-engine/astrology-engine.module';
+import { DashaModule } from '../dasha/dasha.module';
+import { DoshaModule } from '../dosha/dosha.module';
+import { CompatibilityModule } from '../compatibility/compatibility.module';
+import { RemediesModule } from '../remedies/remedies.module';
+import { ProfileModule } from '../profile/profile.module';
 
 @Module({
   imports: [
@@ -38,6 +44,12 @@ import { CalendarModule } from '../calendar/calendar.module';
     TransitsModule,
     HoroscopeRuleModule,
     CalendarModule,
+    AstrologyEngineModule,
+    DashaModule,
+    DoshaModule,
+    CompatibilityModule,
+    RemediesModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
