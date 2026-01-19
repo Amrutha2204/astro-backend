@@ -150,17 +150,5 @@ export class CompatibilityController {
     }
   }
 
-  @Get('score')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get compatibility score with partner (requires partner details)',
-  })
-  async getCompatibilityScore(@Request() req: any) {
-    throw new HttpException(
-      'Please use POST /compatibility/marriage with partner details.',
-      HttpStatus.BAD_REQUEST,
-    );
-  }
 }
 

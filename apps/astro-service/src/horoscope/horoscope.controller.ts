@@ -21,47 +21,6 @@ import { HoroscopeService } from './horoscope.service';
 export class HoroscopeController {
   constructor(private readonly horoscopeService: HoroscopeService) {}
 
-  @Get('my-day-today')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get personalized daily horoscope based on user's birth details",
-  })
-  @ApiQuery({
-    name: 'date',
-    required: false,
-    description: 'Date for horoscope (YYYY-MM-DD). Defaults to today',
-    example: '2024-01-15',
-  })
-  @ApiOkResponse({
-    description: 'Personalized daily horoscope retrieved successfully',
-    schema: {
-      example: {
-        sign: 'aries',
-        date: '2024-01-15',
-        horoscope: {
-          daily_prediction: {
-            sign_name: 'Aries',
-            prediction: 'Your personalized horoscope...',
-          },
-        },
-        source: 'Prokerala API',
-      },
-    },
-  })
-  async getMyDayToday(@Request() req: any, @Query('date') date?: string) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
-    return this.horoscopeService.getMyDayToday(token, date);
-  }
-
   @Get('weekly')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
