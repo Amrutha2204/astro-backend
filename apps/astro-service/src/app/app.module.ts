@@ -16,7 +16,6 @@ import { DashaModule } from '../dasha/dasha.module';
 import { DoshaModule } from '../dosha/dosha.module';
 import { CompatibilityModule } from '../compatibility/compatibility.module';
 import { RemediesModule } from '../remedies/remedies.module';
-import { ProfileModule } from '../profile/profile.module';
 
 @Module({
   imports: [
@@ -49,7 +48,6 @@ import { ProfileModule } from '../profile/profile.module';
     DoshaModule,
     CompatibilityModule,
     RemediesModule,
-    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
