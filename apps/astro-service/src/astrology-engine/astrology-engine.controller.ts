@@ -15,7 +15,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { AstrologyEngineService } from './astrology-engine.service';
-import { BirthChartDto } from './dto/birth-chart.dto';
+import { BirthChartDto, HouseSystem } from './dto/birth-chart.dto';
 
 @Controller('api/v1/astrology-engine')
 @ApiTags('Astrology Engine')
@@ -85,6 +85,22 @@ export class AstrologyEngineController {
     }
 
     try {
+      const houseSystemMap: Record<string, HouseSystem> = {
+        'placidus': HouseSystem.Placidus,
+        'koch': HouseSystem.Koch,
+        'equal': HouseSystem.Equal,
+        'whole-sign': HouseSystem.WholeSign,
+        'wholeSign': HouseSystem.WholeSign,
+        'P': HouseSystem.Placidus,
+        'K': HouseSystem.Koch,
+        'E': HouseSystem.Equal,
+        'W': HouseSystem.WholeSign,
+      };
+
+      const houseSystem = dto.houseSystem 
+        ? (houseSystemMap[dto.houseSystem.toLowerCase()] || HouseSystem.Placidus)
+        : HouseSystem.Placidus;
+
       const birthDetails = {
         year: dto.year,
         month: dto.month,
@@ -93,6 +109,7 @@ export class AstrologyEngineController {
         minute: dto.minute || 0,
         latitude: dto.latitude,
         longitude: dto.longitude,
+        houseSystem,
       };
 
       return await this.astrologyEngineService.calculateVedicChart(
@@ -131,6 +148,22 @@ export class AstrologyEngineController {
     }
 
     try {
+      const houseSystemMap: Record<string, HouseSystem> = {
+        'placidus': HouseSystem.Placidus,
+        'koch': HouseSystem.Koch,
+        'equal': HouseSystem.Equal,
+        'whole-sign': HouseSystem.WholeSign,
+        'wholeSign': HouseSystem.WholeSign,
+        'P': HouseSystem.Placidus,
+        'K': HouseSystem.Koch,
+        'E': HouseSystem.Equal,
+        'W': HouseSystem.WholeSign,
+      };
+
+      const houseSystem = dto.houseSystem 
+        ? (houseSystemMap[dto.houseSystem.toLowerCase()] || HouseSystem.Placidus)
+        : HouseSystem.Placidus;
+
       const birthDetails = {
         year: dto.year,
         month: dto.month,
@@ -139,6 +172,7 @@ export class AstrologyEngineController {
         minute: dto.minute || 0,
         latitude: dto.latitude,
         longitude: dto.longitude,
+        houseSystem,
       };
 
       return await this.astrologyEngineService.calculateWesternChart(

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNumber, Min, Max, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsNumber, Min, Max, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class PartnerBirthDetailsDto {
   @ApiProperty({ description: 'Year of birth', example: 1992 })
@@ -54,9 +55,13 @@ export class PartnerBirthDetailsDto {
 
 export class CompatibilityDto {
   @ApiProperty({ description: 'Partner 1 birth details', type: PartnerBirthDetailsDto })
+  @ValidateNested()
+  @Type(() => PartnerBirthDetailsDto)
   partner1: PartnerBirthDetailsDto;
 
   @ApiProperty({ description: 'Partner 2 birth details', type: PartnerBirthDetailsDto })
+  @ValidateNested()
+  @Type(() => PartnerBirthDetailsDto)
   partner2: PartnerBirthDetailsDto;
 }
 

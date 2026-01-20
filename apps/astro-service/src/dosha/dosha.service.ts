@@ -162,31 +162,33 @@ export class DoshaService {
   }
 
   async checkCompatibilityDoshas(
-    chart1: any,
-    chart2: any,
+    vedicChart1: any,
+    vedicChart2: any,
+    birthDetails1: any,
+    birthDetails2: any,
   ): Promise<{
     manglikCompatibility: string;
     nadiCompatibility: string;
     bhakootCompatibility: string;
   }> {
     const dosha1 = await this.checkDoshas(
-      chart1.year,
-      chart1.month,
-      chart1.day,
-      chart1.hour,
-      chart1.minute,
-      chart1.latitude,
-      chart1.longitude,
+      birthDetails1.year,
+      birthDetails1.month,
+      birthDetails1.day,
+      birthDetails1.hour || 12,
+      birthDetails1.minute || 0,
+      birthDetails1.latitude,
+      birthDetails1.longitude,
     );
 
     const dosha2 = await this.checkDoshas(
-      chart2.year,
-      chart2.month,
-      chart2.day,
-      chart2.hour,
-      chart2.minute,
-      chart2.latitude,
-      chart2.longitude,
+      birthDetails2.year,
+      birthDetails2.month,
+      birthDetails2.day,
+      birthDetails2.hour || 12,
+      birthDetails2.minute || 0,
+      birthDetails2.latitude,
+      birthDetails2.longitude,
     );
 
     const manglik1 = dosha1.manglik.hasDosha;
@@ -199,8 +201,10 @@ export class DoshaService {
       manglikCompatibility = 'Manglik dosha present - remedies recommended';
     }
 
-    const nadi1 = chart1.planets.find((p: any) => p.planet === 'Moon')?.nakshatra || '';
-    const nadi2 = chart2.planets.find((p: any) => p.planet === 'Moon')?.nakshatra || '';
+    const moon1 = vedicChart1.planets?.find((p: any) => p.planet === 'Moon');
+    const moon2 = vedicChart2.planets?.find((p: any) => p.planet === 'Moon');
+    const nadi1 = moon1?.nakshatra || '';
+    const nadi2 = moon2?.nakshatra || '';
     
     const nadiGroups: Record<string, string> = {
       'Ashwini': 'Vata', 'Bharani': 'Vata', 'Krittika': 'Vata',
@@ -221,10 +225,19 @@ export class DoshaService {
       ? 'Nadi dosha present - same Nadi'
       : 'No Nadi dosha';
 
-    const bhakoot1 = dosha1.bhakoot.hasDosha;
-    const bhakoot2 = dosha2.bhakoot.hasDosha;
+    const moonSign1 = vedicChart1.moonSign?.sign || vedicChart1.moonSign || '';
+    const moonSign2 = vedicChart2.moonSign?.sign || vedicChart2.moonSign || '';
     
-    const bhakootCompatibility = bhakoot1 || bhakoot2
+    const signNumbers: Record<string, number> = {
+      'Aries': 1, 'Taurus': 2, 'Gemini': 3, 'Cancer': 4,
+      'Leo': 5, 'Virgo': 6, 'Libra': 7, 'Scorpio': 8,
+      'Sagittarius': 9, 'Capricorn': 10, 'Aquarius': 11, 'Pisces': 12,
+    };
+
+    const diff = Math.abs((signNumbers[moonSign1] || 0) - (signNumbers[moonSign2] || 0));
+    const hasBhakootDosha = diff === 6 || diff === 8 || diff === 12;
+    
+    const bhakootCompatibility = hasBhakootDosha
       ? 'Bhakoot dosha present'
       : 'No Bhakoot dosha';
 

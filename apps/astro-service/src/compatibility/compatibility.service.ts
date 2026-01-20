@@ -41,22 +41,71 @@ export class CompatibilityService {
     chart2: any,
   ): Promise<GunaMilanResult> {
     try {
-      const vedicChart1 = await this.astrologyEngineService.calculateVedicChart(chart1);
-      const vedicChart2 = await this.astrologyEngineService.calculateVedicChart(chart2);
+      if (!chart1 || !chart2) {
+        throw new Error('Chart data is missing. Both partner1 and partner2 are required.');
+      }
 
-      const gunas = [
-        this.calculateVarna(chart1, chart2),
-        this.calculateVashya(chart1, chart2),
-        this.calculateTara(chart1, chart2),
-        this.calculateYoni(chart1, chart2),
-        this.calculateGrahaMaitri(chart1, chart2),
-        this.calculateGana(chart1, chart2),
-        this.calculateBhakoot(chart1, chart2),
-        this.calculateNadi(chart1, chart2),
-      ];
+      if (!chart1.year || !chart1.month || !chart1.day) {
+        throw new Error('Partner1 birth details incomplete. Year, month, and day are required.');
+      }
 
-      const totalScore = gunas.reduce((sum, guna) => sum + guna.score, 0);
-      const maxScore = gunas.reduce((sum, guna) => sum + guna.maxScore, 0);
+      if (!chart2.year || !chart2.month || !chart2.day) {
+        throw new Error('Partner2 birth details incomplete. Year, month, and day are required.');
+      }
+
+      this.logger.debug(`Calculating vedic chart for partner1: ${JSON.stringify(chart1)}`);
+      this.logger.debug(`Calculating vedic chart for partner2: ${JSON.stringify(chart2)}`);
+
+      const vedicChart1 = await this.astrologyEngineService.calculateVedicChart({
+        year: chart1.year,
+        month: chart1.month,
+        day: chart1.day,
+        hour: chart1.hour || 12,
+        minute: chart1.minute || 0,
+        latitude: chart1.latitude,
+        longitude: chart1.longitude,
+      });
+
+      const vedicChart2 = await this.astrologyEngineService.calculateVedicChart({
+        year: chart2.year,
+        month: chart2.month,
+        day: chart2.day,
+        hour: chart2.hour || 12,
+        minute: chart2.minute || 0,
+        latitude: chart2.latitude,
+        longitude: chart2.longitude,
+      });
+
+      const gunas = [];
+      try {
+        this.logger.debug(`Calculating Varna...`);
+        gunas.push(this.calculateVarna(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Vashya...`);
+        gunas.push(this.calculateVashya(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Tara...`);
+        gunas.push(this.calculateTara(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Yoni...`);
+        gunas.push(this.calculateYoni(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Graha Maitri...`);
+        gunas.push(this.calculateGrahaMaitri(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Gana...`);
+        gunas.push(this.calculateGana(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Bhakoot...`);
+        gunas.push(this.calculateBhakoot(vedicChart1, vedicChart2));
+        this.logger.debug(`Calculating Nadi...`);
+        gunas.push(this.calculateNadi(vedicChart1, vedicChart2));
+      } catch (gunaError) {
+        this.logger.error(`Error in guna calculation: ${gunaError.message}`, gunaError.stack);
+        throw new Error(`Guna calculation failed: ${gunaError.message}`);
+      }
+
+      const totalScore = gunas.reduce((sum, guna) => sum + (guna.score || 0), 0);
+      const maxScore = gunas.reduce((sum, guna) => sum + (guna.maxScore || 0), 0);
+      
+      if (maxScore === 0) {
+        throw new Error('Invalid guna calculation: maxScore is 0');
+      }
+      
       const percentage = Math.round((totalScore / maxScore) * 100);
 
       let verdict: 'Excellent' | 'Good' | 'Average' | 'Below Average';
@@ -90,7 +139,29 @@ export class CompatibilityService {
     try {
       const gunaMilan = await this.calculateGunaMilan(chart1, chart2);
       
+      const vedicChart1 = await this.astrologyEngineService.calculateVedicChart({
+        year: chart1.year,
+        month: chart1.month,
+        day: chart1.day,
+        hour: chart1.hour || 12,
+        minute: chart1.minute || 0,
+        latitude: chart1.latitude,
+        longitude: chart1.longitude,
+      });
+
+      const vedicChart2 = await this.astrologyEngineService.calculateVedicChart({
+        year: chart2.year,
+        month: chart2.month,
+        day: chart2.day,
+        hour: chart2.hour || 12,
+        minute: chart2.minute || 0,
+        latitude: chart2.latitude,
+        longitude: chart2.longitude,
+      });
+      
       const doshaCompatibility = await this.doshaService.checkCompatibilityDoshas(
+        vedicChart1,
+        vedicChart2,
         chart1,
         chart2,
       );
@@ -124,8 +195,10 @@ export class CompatibilityService {
       'Cancer': 4, 'Scorpio': 4, 'Pisces': 4,
     };
 
-    const varna1 = varnaMap[chart1.sunSign?.sign || ''] || 0;
-    const varna2 = varnaMap[chart2.sunSign?.sign || ''] || 0;
+    const sunSign1 = chart1.sunSign?.sign || chart1.sunSign || '';
+    const sunSign2 = chart2.sunSign?.sign || chart2.sunSign || '';
+    const varna1 = varnaMap[sunSign1] || 0;
+    const varna2 = varnaMap[sunSign2] || 0;
 
     let score = 0;
     if (varna1 === varna2) {
@@ -190,8 +263,8 @@ export class CompatibilityService {
   }
 
   private calculateBhakoot(chart1: any, chart2: any): any {
-    const moon1 = chart1.moonSign?.sign || '';
-    const moon2 = chart2.moonSign?.sign || '';
+    const moon1 = chart1.moonSign?.sign || chart1.moonSign || '';
+    const moon2 = chart2.moonSign?.sign || chart2.moonSign || '';
     
     const signNumbers: Record<string, number> = {
       'Aries': 1, 'Taurus': 2, 'Gemini': 3, 'Cancer': 4,
@@ -211,8 +284,10 @@ export class CompatibilityService {
   }
 
   private calculateNadi(chart1: any, chart2: any): any {
-    const nakshatra1 = chart1.planets?.find((p: any) => p.planet === 'Moon')?.nakshatra || '';
-    const nakshatra2 = chart2.planets?.find((p: any) => p.planet === 'Moon')?.nakshatra || '';
+    const moon1 = chart1.planets?.find((p: any) => p.planet === 'Moon');
+    const moon2 = chart2.planets?.find((p: any) => p.planet === 'Moon');
+    const nakshatra1 = moon1?.nakshatra || '';
+    const nakshatra2 = moon2?.nakshatra || '';
     
     const nadiGroups: Record<string, string> = {
       'Ashwini': 'Vata', 'Bharani': 'Vata', 'Krittika': 'Vata',

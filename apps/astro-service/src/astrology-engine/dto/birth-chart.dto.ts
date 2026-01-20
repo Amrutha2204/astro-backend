@@ -98,13 +98,13 @@ export class BirthChartDto {
   longitude: number;
 
   @ApiProperty({
-    description: 'House system to use',
+    description: 'House system to use (P=Placidus, K=Koch, E=Equal, W=WholeSign) or use names: placidus, koch, equal, whole-sign',
     enum: HouseSystem,
     required: false,
     default: HouseSystem.Placidus,
+    example: 'P',
   })
-  @IsEnum(HouseSystem)
   @IsOptional()
-  houseSystem?: HouseSystem;
+  houseSystem?: HouseSystem | string;
 }
 

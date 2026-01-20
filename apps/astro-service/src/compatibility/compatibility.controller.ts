@@ -47,6 +47,21 @@ export class CompatibilityController {
     }
 
     try {
+      console.log('Received DTO:', JSON.stringify(dto, null, 2));
+      
+      if (!dto || !dto.partner1 || !dto.partner2) {
+        console.error('DTO validation failed:', {
+          dtoExists: !!dto,
+          partner1Exists: !!dto?.partner1,
+          partner2Exists: !!dto?.partner2,
+          dtoKeys: dto ? Object.keys(dto) : [],
+        });
+        throw new HttpException(
+          'Both partner1 and partner2 are required.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const chart1 = {
         year: dto.partner1.year,
         month: dto.partner1.month,
@@ -67,6 +82,20 @@ export class CompatibilityController {
         longitude: dto.partner2.longitude,
       };
 
+      if (!chart1.year || !chart1.month || !chart1.day || !chart1.latitude || !chart1.longitude) {
+        throw new HttpException(
+          'Partner1 birth details incomplete. Year, month, day, latitude, and longitude are required.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (!chart2.year || !chart2.month || !chart2.day || !chart2.latitude || !chart2.longitude) {
+        throw new HttpException(
+          'Partner2 birth details incomplete. Year, month, day, latitude, and longitude are required.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const result = await this.compatibilityService.calculateGunaMilan(
         chart1,
         chart2,
@@ -80,8 +109,12 @@ export class CompatibilityController {
       if (error instanceof HttpException) {
         throw error;
       }
+      const errorMessage = error?.message || 'Unknown error';
+      const errorStack = error?.stack || '';
+      console.error('Guna Milan calculation error:', errorMessage);
+      console.error('Stack:', errorStack);
       throw new HttpException(
-        'Failed to calculate Guna Milan.',
+        `Failed to calculate Guna Milan: ${errorMessage}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
