@@ -53,9 +53,6 @@ export class CompatibilityService {
         throw new Error('Partner2 birth details incomplete. Year, month, and day are required.');
       }
 
-      this.logger.debug(`Calculating vedic chart for partner1: ${JSON.stringify(chart1)}`);
-      this.logger.debug(`Calculating vedic chart for partner2: ${JSON.stringify(chart2)}`);
-
       const vedicChart1 = await this.astrologyEngineService.calculateVedicChart({
         year: chart1.year,
         month: chart1.month,
@@ -76,28 +73,16 @@ export class CompatibilityService {
         longitude: chart2.longitude,
       });
 
-      const gunas = [];
-      try {
-        this.logger.debug(`Calculating Varna...`);
-        gunas.push(this.calculateVarna(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Vashya...`);
-        gunas.push(this.calculateVashya(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Tara...`);
-        gunas.push(this.calculateTara(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Yoni...`);
-        gunas.push(this.calculateYoni(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Graha Maitri...`);
-        gunas.push(this.calculateGrahaMaitri(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Gana...`);
-        gunas.push(this.calculateGana(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Bhakoot...`);
-        gunas.push(this.calculateBhakoot(vedicChart1, vedicChart2));
-        this.logger.debug(`Calculating Nadi...`);
-        gunas.push(this.calculateNadi(vedicChart1, vedicChart2));
-      } catch (gunaError) {
-        this.logger.error(`Error in guna calculation: ${gunaError.message}`, gunaError.stack);
-        throw new Error(`Guna calculation failed: ${gunaError.message}`);
-      }
+      const gunas = [
+        this.calculateVarna(vedicChart1, vedicChart2),
+        this.calculateVashya(vedicChart1, vedicChart2),
+        this.calculateTara(vedicChart1, vedicChart2),
+        this.calculateYoni(vedicChart1, vedicChart2),
+        this.calculateGrahaMaitri(vedicChart1, vedicChart2),
+        this.calculateGana(vedicChart1, vedicChart2),
+        this.calculateBhakoot(vedicChart1, vedicChart2),
+        this.calculateNadi(vedicChart1, vedicChart2),
+      ];
 
       const totalScore = gunas.reduce((sum, guna) => sum + (guna.score || 0), 0);
       const maxScore = gunas.reduce((sum, guna) => sum + (guna.maxScore || 0), 0);

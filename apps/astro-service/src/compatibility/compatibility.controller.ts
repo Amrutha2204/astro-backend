@@ -47,15 +47,7 @@ export class CompatibilityController {
     }
 
     try {
-      console.log('Received DTO:', JSON.stringify(dto, null, 2));
-      
       if (!dto || !dto.partner1 || !dto.partner2) {
-        console.error('DTO validation failed:', {
-          dtoExists: !!dto,
-          partner1Exists: !!dto?.partner1,
-          partner2Exists: !!dto?.partner2,
-          dtoKeys: dto ? Object.keys(dto) : [],
-        });
         throw new HttpException(
           'Both partner1 and partner2 are required.',
           HttpStatus.BAD_REQUEST,
