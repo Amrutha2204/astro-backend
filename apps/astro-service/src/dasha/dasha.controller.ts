@@ -4,7 +4,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -16,6 +16,8 @@ import {
 } from '@nestjs/swagger';
 import { DashaService } from './dasha.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/dasha')
 @ApiTags('Dasha')
@@ -24,6 +26,7 @@ export class DashaController {
 
   @Get('current')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get current Mahadasha, Antardasha details',
@@ -31,16 +34,8 @@ export class DashaController {
   @ApiOkResponse({
     description: 'Current dasha retrieved successfully',
   })
-  async getCurrentDasha(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async getCurrentDasha(@CurrentUser() user: any) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
@@ -104,6 +99,7 @@ export class DashaController {
 
   @Get('timeline')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiQuery({
     name: 'years',
@@ -117,16 +113,11 @@ export class DashaController {
   @ApiOkResponse({
     description: 'Dasha timeline retrieved successfully',
   })
-  async getDashaTimeline(@Request() req: any, @Query('years') years?: number) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async getDashaTimeline(
+    @CurrentUser() user: any,
+    @Query('years') years?: number,
+  ) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 

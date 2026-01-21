@@ -4,7 +4,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -17,6 +17,8 @@ import {
 import { HoroscopeRuleService } from './horoscope-rule.service';
 import { ChartType } from '../common/utils/coordinates.util';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/astrology')
 @ApiTags('Astrology')
@@ -25,6 +27,7 @@ export class HoroscopeRuleController {
 
   @Get('horoscope/today')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get rule-based daily horoscope combining natal chart and transits',
@@ -49,18 +52,10 @@ export class HoroscopeRuleController {
     },
   })
   async getTodayHoroscope(
-    @Request() req: any,
+    @CurrentUser() user: any,
     @Query('chartType') chartType?: ChartType,
   ) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 

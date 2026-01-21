@@ -3,7 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -14,6 +14,8 @@ import {
 } from '@nestjs/swagger';
 import { RemediesService } from './remedies.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/remedies')
 @ApiTags('Remedies')
@@ -22,6 +24,7 @@ export class RemediesController {
 
   @Get('recommendations')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get astrological remedies recommendations',
@@ -29,16 +32,8 @@ export class RemediesController {
   @ApiOkResponse({
     description: 'Remedies retrieved successfully',
   })
-  async getRemedies(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async getRemedies(@CurrentUser() user: any) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
@@ -102,6 +97,7 @@ export class RemediesController {
 
   @Get('timing')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get best timing for performing remedies',
@@ -109,16 +105,8 @@ export class RemediesController {
   @ApiOkResponse({
     description: 'Remedy timing retrieved successfully',
   })
-  async getRemedyTiming(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async getRemedyTiming(@CurrentUser() user: any) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 

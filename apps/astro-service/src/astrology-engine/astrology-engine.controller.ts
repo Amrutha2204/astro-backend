@@ -4,7 +4,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { AstrologyEngineService } from './astrology-engine.service';
 import { BirthChartDto, HouseSystem } from './dto/birth-chart.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('api/v1/astrology-engine')
 @ApiTags('Astrology Engine')
@@ -26,6 +27,7 @@ export class AstrologyEngineController {
 
   @Post('vedic-chart')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Calculate Vedic birth chart using Swiss Ephemeris',
@@ -72,17 +74,7 @@ export class AstrologyEngineController {
       },
     },
   })
-  async calculateVedicChart(
-    @Request() req: any,
-    @Body() dto: BirthChartDto,
-  ) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+  async calculateVedicChart(@Body() dto: BirthChartDto) {
 
     try {
       const houseSystemMap: Record<string, HouseSystem> = {
@@ -135,17 +127,7 @@ export class AstrologyEngineController {
   @ApiOkResponse({
     description: 'Western birth chart calculated successfully',
   })
-  async calculateWesternChart(
-    @Request() req: any,
-    @Body() dto: BirthChartDto,
-  ) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+  async calculateWesternChart(@Body() dto: BirthChartDto) {
 
     try {
       const houseSystemMap: Record<string, HouseSystem> = {

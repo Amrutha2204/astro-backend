@@ -5,7 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -18,6 +18,7 @@ import {
 import { CompatibilityService } from './compatibility.service';
 import { CompatibilityDto } from './dto/compatibility.dto';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('api/v1/compatibility')
 @ApiTags('Compatibility')
@@ -26,6 +27,7 @@ export class CompatibilityController {
 
   @Post('guna-milan')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Calculate Guna Milan (Ashtakoota) matching score',
@@ -34,17 +36,7 @@ export class CompatibilityController {
   @ApiOkResponse({
     description: 'Guna Milan calculated successfully',
   })
-  async calculateGunaMilan(
-    @Request() req: any,
-    @Body() dto: CompatibilityDto,
-  ) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+  async calculateGunaMilan(@Body() dto: CompatibilityDto) {
 
     try {
       if (!dto || !dto.partner1 || !dto.partner2) {
@@ -114,6 +106,7 @@ export class CompatibilityController {
 
   @Post('marriage')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Calculate full marriage compatibility (Guna Milan + Doshas)',
@@ -122,17 +115,7 @@ export class CompatibilityController {
   @ApiOkResponse({
     description: 'Marriage compatibility calculated successfully',
   })
-  async calculateMarriageCompatibility(
-    @Request() req: any,
-    @Body() dto: CompatibilityDto,
-  ) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+  async calculateMarriageCompatibility(@Body() dto: CompatibilityDto) {
 
     try {
       const chart1 = {

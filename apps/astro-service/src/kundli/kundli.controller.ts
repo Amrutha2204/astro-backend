@@ -4,7 +4,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -20,6 +20,8 @@ import {
   ChartType,
   getCoordinatesFromCity,
 } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/kundli')
 @ApiTags('Kundli')
@@ -28,6 +30,7 @@ export class KundliController {
 
   @Get('my-kundli')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get personalized kundli (birth chart) based on user birth details',
@@ -53,18 +56,10 @@ export class KundliController {
     },
   })
   async getMyKundli(
-    @Request() req: any,
+    @CurrentUser() user: any,
     @Query('chartType') chartType?: ChartType,
   ) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 

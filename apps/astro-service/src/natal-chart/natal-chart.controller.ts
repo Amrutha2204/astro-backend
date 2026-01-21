@@ -4,7 +4,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -17,6 +17,8 @@ import {
 import { NatalChartService } from './natal-chart.service';
 import { ChartType } from '../common/utils/coordinates.util';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/astrology')
 @ApiTags('Astrology')
@@ -25,6 +27,7 @@ export class NatalChartController {
 
   @Get('natal-chart')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get natal chart (birth chart) with Sun, Moon, Ascendant, and planet positions',
@@ -51,16 +54,11 @@ export class NatalChartController {
       },
     },
   })
-  async getNatalChart(@Request() req: any, @Query('chartType') chartType?: ChartType) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async getNatalChart(
+    @CurrentUser() user: any,
+    @Query('chartType') chartType?: ChartType,
+  ) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 

@@ -3,7 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -14,6 +14,8 @@ import {
 } from '@nestjs/swagger';
 import { DoshaService } from './dosha.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/dosha')
 @ApiTags('Dosha')
@@ -22,6 +24,7 @@ export class DoshaController {
 
   @Get('check')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Check all doshas (Manglik, Nadi, Bhakoot)',
@@ -29,16 +32,8 @@ export class DoshaController {
   @ApiOkResponse({
     description: 'Dosha check completed successfully',
   })
-  async checkDoshas(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async checkDoshas(@CurrentUser() user: any) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
@@ -102,6 +97,7 @@ export class DoshaController {
 
   @Get('manglik')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Check Manglik (Mangal Dosha) status',
@@ -109,16 +105,8 @@ export class DoshaController {
   @ApiOkResponse({
     description: 'Manglik status retrieved successfully',
   })
-  async checkManglik(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async checkManglik(@CurrentUser() user: any) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 

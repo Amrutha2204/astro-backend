@@ -3,10 +3,9 @@ import {
   Post,
   Get,
   Body,
-  Request,
+  UseGuards,
   HttpCode,
   HttpStatus,
-  HttpException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +17,8 @@ import {
 import { AiAssistantService } from './ai-assistant.service';
 import { ChatDto } from './dto/chat.dto';
 import { ExplainKundliDto } from './dto/explain-kundli.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/ai-assistant')
 @ApiTags('AI Assistant')
@@ -27,6 +28,8 @@ export class AiAssistantController {
 
   @Post('chat')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Ask astrology questions to AI assistant' })
   @ApiBody({ type: ChatDto })
   @ApiOkResponse({
@@ -43,22 +46,14 @@ export class AiAssistantController {
       },
     },
   })
-  async chat(@Request() req: any, @Body() dto: ChatDto) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
-
-    return this.aiAssistantService.chat(token, dto);
+  async chat(@CurrentUser() user: any, @Body() dto: ChatDto) {
+    return this.aiAssistantService.chat(user.token, dto);
   }
 
   @Post('explain-kundli')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get AI explanation of birth chart' })
   @ApiBody({ type: ExplainKundliDto })
   @ApiOkResponse({
@@ -78,22 +73,17 @@ export class AiAssistantController {
       },
     },
   })
-  async explainKundli(@Request() req: any, @Body() dto: ExplainKundliDto) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
-
-    return this.aiAssistantService.explainKundli(token, dto);
+  async explainKundli(
+    @CurrentUser() user: any,
+    @Body() dto: ExplainKundliDto,
+  ) {
+    return this.aiAssistantService.explainKundli(user.token, dto);
   }
 
   @Get('suggestions')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get daily personalized AI suggestions' })
   @ApiOkResponse({
     description: 'Daily personalized suggestions based on transits',
@@ -116,18 +106,8 @@ export class AiAssistantController {
       },
     },
   })
-  async getSuggestions(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
-
-    return this.aiAssistantService.getSuggestions(token);
+  async getSuggestions(@CurrentUser() user: any) {
+    return this.aiAssistantService.getSuggestions(user.token);
   }
 
   @Get('models')
