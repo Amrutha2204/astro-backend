@@ -55,7 +55,7 @@ export class HoroscopeService {
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const weeklyPredictions = [];
       const today = new Date();
@@ -131,7 +131,7 @@ export class HoroscopeService {
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const monthlyPredictions = [];
       const today = new Date();

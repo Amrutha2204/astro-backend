@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { BENEFICIAL_SIGNS, NAKSHATRAS } from '../common/constants/astrology.constants';
 import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
 
 @Injectable()
@@ -99,16 +100,8 @@ export class CalendarService {
   }
 
   private getNakshatraFromLongitude(longitude: number): string {
-    const nakshatras = [
-      'Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra',
-      'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni',
-      'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshta',
-      'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha',
-      'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati',
-    ];
-
     const nakshatraIndex = Math.floor(longitude / (360 / 27));
-    return nakshatras[nakshatraIndex % 27];
+    return NAKSHATRAS[nakshatraIndex % 27];
   }
 
   private isAuspiciousDay(planets: any[]): boolean {
@@ -119,8 +112,6 @@ export class CalendarService {
 
     const jupiterSign = jupiter.sign;
     const venusSign = venus.sign;
-
-    const beneficialSigns = ['Cancer', 'Leo', 'Sagittarius', 'Pisces'];
-    return beneficialSigns.includes(jupiterSign) || beneficialSigns.includes(venusSign);
+    return (BENEFICIAL_SIGNS as readonly string[]).includes(jupiterSign) || (BENEFICIAL_SIGNS as readonly string[]).includes(venusSign);
   }
 }

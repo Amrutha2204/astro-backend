@@ -1,56 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as swisseph from 'swisseph-v2';
+import { ZODIAC_SIGNS } from '../constants/astrology.constants';
+import type { BirthChartData, HouseCusp, PlanetaryPosition } from '../interfaces/swiss-ephemeris.interface';
 
-export interface PlanetaryPosition {
-  planet: string;
-  longitude: number;
-  latitude: number;
-  distance: number;
-  speed: number;
-  sign: string;
-  signDegree: number;
-}
-
-export interface HouseCusp {
-  house: number;
-  longitude: number;
-  sign: string;
-  signDegree: number;
-}
-
-export interface BirthChartData {
-  ascendant: {
-    longitude: number;
-    sign: string;
-    signDegree: number;
-  };
-  mc: {
-    longitude: number;
-    sign: string;
-    signDegree: number;
-  };
-  planets: PlanetaryPosition[];
-  houses: HouseCusp[];
-  julianDay: number;
-}
+export type { BirthChartData, HouseCusp, PlanetaryPosition } from '../interfaces/swiss-ephemeris.interface';
 
 @Injectable()
 export class SwissEphemerisService {
   private readonly logger = new Logger(SwissEphemerisService.name);
-  private readonly zodiacSigns = [
-    'Aries',
-    'Taurus',
-    'Gemini',
-    'Cancer',
-    'Leo',
-    'Virgo',
-    'Libra',
-    'Scorpio',
-    'Sagittarius',
-    'Capricorn',
-    'Aquarius',
-    'Pisces',
-  ];
 
   private dateToJulianDay(
     year: number,
@@ -74,7 +31,7 @@ export class SwissEphemerisService {
     const signIndex = Math.floor(longitude / 30);
     const degree = longitude % 30;
     return {
-      sign: this.zodiacSigns[signIndex % 12],
+      sign: ZODIAC_SIGNS[signIndex % 12],
       degree: degree,
     };
   }

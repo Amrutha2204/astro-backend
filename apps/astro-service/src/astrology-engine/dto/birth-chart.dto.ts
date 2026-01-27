@@ -5,15 +5,10 @@ import {
   Min,
   Max,
   IsOptional,
-  IsEnum,
 } from 'class-validator';
+import { HouseSystem } from '../../common/constants/astrology.constants';
 
-export enum HouseSystem {
-  Placidus = 'P', // Placidus
-  Koch = 'K', // Koch
-  Equal = 'E', // Equal houses
-  WholeSign = 'W', // Whole Sign
-}
+export { HouseSystem } from '../../common/constants/astrology.constants';
 
 export class BirthChartDto {
   @ApiProperty({

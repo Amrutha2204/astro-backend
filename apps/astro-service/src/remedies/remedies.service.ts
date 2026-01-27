@@ -1,28 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  DEBILITATED_SIGNS,
+  DONATION_MAP,
+  GEMSTONE_MAP,
+  MANTRA_MAP,
+  NAKSHATRA_FASTING_MAP,
+} from '../common/constants/remedies.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
 import { CalendarService } from '../calendar/calendar.service';
+import type { Remedy, RemedyRecommendations } from './interfaces/remedies.interface';
 
-export interface Remedy {
-  type: 'gemstone' | 'mantra' | 'fasting' | 'donation' | 'ritual';
-  name: string;
-  description: string;
-  timing?: string;
-  frequency?: string;
-}
-
-export interface RemedyRecommendations {
-  gemstones: Remedy[];
-  mantras: Remedy[];
-  fastingDays: Remedy[];
-  donations: Remedy[];
-  rituals: Remedy[];
-  bestTiming: {
-    day: string;
-    time: string;
-    tithi?: string;
-    nakshatra?: string;
-  };
-}
+export type { Remedy, RemedyRecommendations } from './interfaces/remedies.interface';
 
 @Injectable()
 export class RemediesService {
@@ -78,20 +66,8 @@ export class RemediesService {
     const gemstones: Remedy[] = [];
     const weakPlanets = this.identifyWeakPlanets(chart);
 
-    const gemstoneMap: Record<string, string> = {
-      'Sun': 'Ruby',
-      'Moon': 'Pearl',
-      'Mars': 'Red Coral',
-      'Mercury': 'Emerald',
-      'Jupiter': 'Yellow Sapphire',
-      'Venus': 'Diamond',
-      'Saturn': 'Blue Sapphire',
-      'Rahu': 'Hessonite',
-      'Ketu': 'Cat\'s Eye',
-    };
-
     weakPlanets.forEach((planet) => {
-      const gemstone = gemstoneMap[planet];
+      const gemstone = GEMSTONE_MAP[planet];
       if (gemstone) {
         gemstones.push({
           type: 'gemstone',
@@ -116,35 +92,20 @@ export class RemediesService {
     const lagna = chart.lagna?.sign || '';
     const moonSign = chart.moonSign?.sign || '';
 
-    const mantraMap: Record<string, string> = {
-      'Aries': 'Om Mangalaya Namah',
-      'Taurus': 'Om Shukraya Namah',
-      'Gemini': 'Om Budhaya Namah',
-      'Cancer': 'Om Chandramase Namah',
-      'Leo': 'Om Suryaya Namah',
-      'Virgo': 'Om Budhaya Namah',
-      'Libra': 'Om Shukraya Namah',
-      'Scorpio': 'Om Mangalaya Namah',
-      'Sagittarius': 'Om Gurave Namah',
-      'Capricorn': 'Om Shanaye Namah',
-      'Aquarius': 'Om Shanaye Namah',
-      'Pisces': 'Om Gurave Namah',
-    };
-
-    if (mantraMap[lagna]) {
+    if (MANTRA_MAP[lagna]) {
       mantras.push({
         type: 'mantra',
         name: `Lagna Mantra for ${lagna}`,
-        description: `Chant "${mantraMap[lagna]}" 108 times daily`,
+        description: `Chant "${MANTRA_MAP[lagna]}" 108 times daily`,
         frequency: 'Daily, preferably in the morning',
       });
     }
 
-    if (mantraMap[moonSign] && moonSign !== lagna) {
+    if (MANTRA_MAP[moonSign] && moonSign !== lagna) {
       mantras.push({
         type: 'mantra',
         name: `Moon Sign Mantra for ${moonSign}`,
-        description: `Chant "${mantraMap[moonSign]}" 108 times daily`,
+        description: `Chant "${MANTRA_MAP[moonSign]}" 108 times daily`,
         frequency: 'Daily, preferably in the evening',
       });
     }
@@ -163,34 +124,7 @@ export class RemediesService {
     const fastingDays: Remedy[] = [];
     const moonNakshatra = chart.planets?.find((p: any) => p.planet === 'Moon')?.nakshatra || '';
 
-    const nakshatraFastingMap: Record<string, string> = {
-      'Rohini': 'Friday',
-      'Mrigashira': 'Tuesday',
-      'Ardra': 'Wednesday',
-      'Punarvasu': 'Thursday',
-      'Pushya': 'Thursday',
-      'Ashlesha': 'Saturday',
-      'Magha': 'Sunday',
-      'Purva Phalguni': 'Friday',
-      'Uttara Phalguni': 'Sunday',
-      'Hasta': 'Wednesday',
-      'Chitra': 'Tuesday',
-      'Swati': 'Friday',
-      'Vishakha': 'Thursday',
-      'Anuradha': 'Saturday',
-      'Jyeshta': 'Tuesday',
-      'Mula': 'Monday',
-      'Purva Ashadha': 'Thursday',
-      'Uttara Ashadha': 'Sunday',
-      'Shravana': 'Monday',
-      'Dhanishta': 'Saturday',
-      'Shatabhisha': 'Friday',
-      'Purva Bhadrapada': 'Thursday',
-      'Uttara Bhadrapada': 'Saturday',
-      'Revati': 'Thursday',
-    };
-
-    const fastingDay = nakshatraFastingMap[moonNakshatra];
+    const fastingDay = NAKSHATRA_FASTING_MAP[moonNakshatra];
     if (fastingDay) {
       fastingDays.push({
         type: 'fasting',
@@ -214,18 +148,8 @@ export class RemediesService {
     const donations: Remedy[] = [];
     const weakPlanets = this.identifyWeakPlanets(chart);
 
-    const donationMap: Record<string, { item: string; day: string }> = {
-      'Sun': { item: 'Wheat, Copper', day: 'Sunday' },
-      'Moon': { item: 'Rice, Silver', day: 'Monday' },
-      'Mars': { item: 'Red Lentils, Red Cloth', day: 'Tuesday' },
-      'Mercury': { item: 'Green Gram, Green Cloth', day: 'Wednesday' },
-      'Jupiter': { item: 'Yellow Gram, Yellow Cloth', day: 'Thursday' },
-      'Venus': { item: 'White Cloth, Sugar', day: 'Friday' },
-      'Saturn': { item: 'Black Sesame, Black Cloth', day: 'Saturday' },
-    };
-
     weakPlanets.forEach((planet) => {
-      const donation = donationMap[planet];
+      const donation = DONATION_MAP[planet];
       if (donation) {
         donations.push({
           type: 'donation',
@@ -289,17 +213,7 @@ export class RemediesService {
       const sign = planet.sign?.toLowerCase() || '';
       const planetName = planet.planet;
       
-      const debilitatedSigns: Record<string, string[]> = {
-        'Sun': ['libra'],
-        'Moon': ['scorpio'],
-        'Mars': ['cancer'],
-        'Mercury': ['pisces'],
-        'Jupiter': ['capricorn'],
-        'Venus': ['virgo'],
-        'Saturn': ['aries'],
-      };
-
-      if (debilitatedSigns[planetName]?.includes(sign)) {
+      if (DEBILITATED_SIGNS[planetName]?.includes(sign)) {
         weakPlanets.push(planetName);
       }
     });

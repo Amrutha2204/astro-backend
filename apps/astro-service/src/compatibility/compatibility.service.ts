@@ -1,31 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  NADI_GROUPS,
+  NAKSHATRAS,
+  SIGN_NUMBERS,
+} from '../common/constants/astrology.constants';
+import {
+  BAD_TARAS,
+  COMPATIBLE_YONI_PAIRS,
+  GANA_MAP,
+  GOOD_TARAS,
+  SIGN_GROUPS,
+  VARNA_MAP,
+  VASHYA_GROUPS,
+  YONI_MAP,
+} from '../common/constants/compatibility.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
 import { DoshaService } from '../dosha/dosha.service';
+import type { CompatibilityResult, GunaMilanResult } from './interfaces/compatibility.interface';
 
-export interface GunaMilanResult {
-  totalScore: number;
-  maxScore: number;
-  percentage: number;
-  verdict: 'Excellent' | 'Good' | 'Average' | 'Below Average';
-  gunas: Array<{
-    name: string;
-    score: number;
-    maxScore: number;
-    description: string;
-  }>;
-}
-
-export interface CompatibilityResult {
-  gunaMilan: GunaMilanResult;
-  doshas: {
-    manglik: string;
-    nadi: string;
-    bhakoot: string;
-  };
-  strengths: string[];
-  challenges: string[];
-  overallVerdict: string;
-}
+export type { CompatibilityResult, GunaMilanResult } from './interfaces/compatibility.interface';
 
 @Injectable()
 export class CompatibilityService {
@@ -173,17 +166,10 @@ export class CompatibilityService {
   }
 
   private calculateVarna(chart1: any, chart2: any): any {
-    const varnaMap: Record<string, number> = {
-      'Aries': 1, 'Leo': 1, 'Sagittarius': 1,
-      'Taurus': 2, 'Virgo': 2, 'Capricorn': 2,
-      'Gemini': 3, 'Libra': 3, 'Aquarius': 3,
-      'Cancer': 4, 'Scorpio': 4, 'Pisces': 4,
-    };
-
     const sunSign1 = chart1.sunSign?.sign || chart1.sunSign || '';
     const sunSign2 = chart2.sunSign?.sign || chart2.sunSign || '';
-    const varna1 = varnaMap[sunSign1] || 0;
-    const varna2 = varnaMap[sunSign2] || 0;
+    const varna1 = VARNA_MAP[sunSign1] ?? 0;
+    const varna2 = VARNA_MAP[sunSign2] ?? 0;
 
     let score = 0;
     if (varna1 === varna2) {
@@ -205,17 +191,8 @@ export class CompatibilityService {
   private calculateVashya(chart1: any, chart2: any): any {
     const moon1 = chart1.moonSign?.sign || chart1.moonSign || '';
     const moon2 = chart2.moonSign?.sign || chart2.moonSign || '';
-    
-    // Vashya groups (5 groups based on Moon signs)
-    const vashyaGroups: Record<string, number> = {
-      'Aries': 1, 'Leo': 1, 'Sagittarius': 1,        // Group 1: Fire signs
-      'Taurus': 2, 'Virgo': 2, 'Capricorn': 2,        // Group 2: Earth signs
-      'Gemini': 3, 'Libra': 3, 'Aquarius': 3,        // Group 3: Air signs
-      'Cancer': 4, 'Scorpio': 4, 'Pisces': 4,        // Group 4: Water signs
-    };
-    
-    const group1 = vashyaGroups[moon1] || 0;
-    const group2 = vashyaGroups[moon2] || 0;
+    const group1 = VASHYA_GROUPS[moon1] ?? 0;
+    const group2 = VASHYA_GROUPS[moon2] ?? 0;
     
     let score = 0;
     if (group1 === group2) {
@@ -256,16 +233,8 @@ export class CompatibilityService {
       };
     }
     
-    const nakshatras = [
-      'Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra',
-      'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni',
-      'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshta',
-      'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha',
-      'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati',
-    ];
-    
-    const index1 = nakshatras.indexOf(nakshatra1);
-    const index2 = nakshatras.indexOf(nakshatra2);
+    const index1 = NAKSHATRAS.indexOf(nakshatra1 as any);
+    const index2 = NAKSHATRAS.indexOf(nakshatra2 as any);
     
     if (index1 === -1 || index2 === -1) {
       return {
@@ -281,18 +250,12 @@ export class CompatibilityService {
     let tara = ((index2 - index1) % 27 + 27) % 27;
     if (tara === 0) tara = 27;
     
-    // Tara positions: 1,3,5,7,9 are good; 2,4,6,8 are bad
-    const goodTaras = [1, 3, 5, 7, 9];
-    const badTaras = [2, 4, 6, 8];
-    
-    // Convert to 1-9 tara system
     const taraNumber = ((tara - 1) % 9) + 1;
-    
     let score = 0;
-    if (goodTaras.includes(taraNumber)) {
-      score = 3; // Excellent
-    } else if (badTaras.includes(taraNumber)) {
-      score = 0; // Bad
+    if ((GOOD_TARAS as readonly number[]).includes(taraNumber)) {
+      score = 3;
+    } else if ((BAD_TARAS as readonly number[]).includes(taraNumber)) {
+      score = 0;
     } else {
       score = 1; // Neutral (shouldn't happen in 9 tara, but safety)
     }
@@ -324,19 +287,8 @@ export class CompatibilityService {
       };
     }
     
-    // Yoni mapping (14 yoni animals based on nakshatras)
-    const yoniMap: Record<string, string> = {
-      'Ashwini': 'Horse', 'Bharani': 'Elephant', 'Krittika': 'Goat', 'Rohini': 'Serpent',
-      'Mrigashira': 'Serpent', 'Ardra': 'Dog', 'Punarvasu': 'Cat', 'Pushya': 'Goat',
-      'Ashlesha': 'Cat', 'Magha': 'Rat', 'Purva Phalguni': 'Rat', 'Uttara Phalguni': 'Cow',
-      'Hasta': 'Buffalo', 'Chitra': 'Tiger', 'Swati': 'Buffalo', 'Vishakha': 'Tiger',
-      'Anuradha': 'Deer', 'Jyeshta': 'Hare', 'Mula': 'Dog', 'Purva Ashadha': 'Monkey',
-      'Uttara Ashadha': 'Mongoose', 'Shravana': 'Monkey', 'Dhanishta': 'Lion', 'Shatabhisha': 'Horse',
-      'Purva Bhadrapada': 'Lion', 'Uttara Bhadrapada': 'Cow', 'Revati': 'Elephant',
-    };
-    
-    const yoni1 = yoniMap[nakshatra1] || '';
-    const yoni2 = yoniMap[nakshatra2] || '';
+    const yoni1 = YONI_MAP[nakshatra1] || '';
+    const yoni2 = YONI_MAP[nakshatra2] || '';
     
     if (!yoni1 || !yoni2) {
       return {
@@ -347,32 +299,12 @@ export class CompatibilityService {
       };
     }
     
-    // Yoni compatibility scoring
     let score = 0;
     if (yoni1 === yoni2) {
-      score = 4; // Same yoni - excellent
+      score = 4;
     } else {
-      // Check for compatible yoni pairs
-      const compatiblePairs: Record<string, string[]> = {
-        'Horse': ['Horse', 'Elephant'],
-        'Elephant': ['Elephant', 'Horse'],
-        'Goat': ['Goat', 'Serpent'],
-        'Serpent': ['Serpent', 'Goat'],
-        'Dog': ['Dog', 'Cat'],
-        'Cat': ['Cat', 'Dog'],
-        'Rat': ['Rat', 'Cow'],
-        'Cow': ['Cow', 'Rat'],
-        'Buffalo': ['Buffalo', 'Tiger'],
-        'Tiger': ['Tiger', 'Buffalo'],
-        'Deer': ['Deer', 'Hare'],
-        'Hare': ['Hare', 'Deer'],
-        'Monkey': ['Monkey', 'Mongoose'],
-        'Mongoose': ['Mongoose', 'Monkey'],
-        'Lion': ['Lion', 'Horse'],
-      };
-      
-      const compatible = compatiblePairs[yoni1]?.includes(yoni2) || false;
-      score = compatible ? 2 : 0; // Compatible: 2 points, incompatible: 0
+      const compatible = COMPATIBLE_YONI_PAIRS[yoni1]?.includes(yoni2) ?? false;
+      score = compatible ? 2 : 0;
     }
     
     return {
@@ -400,20 +332,8 @@ export class CompatibilityService {
       };
     }
     
-    // Planetary friendship groups (based on Moon signs)
-    // Friends: Same element signs
-    // Neutral: Compatible elements
-    // Enemies: Opposite elements
-    
-    const signGroups: Record<string, number> = {
-      'Aries': 1, 'Leo': 1, 'Sagittarius': 1,        // Fire
-      'Taurus': 2, 'Virgo': 2, 'Capricorn': 2,        // Earth
-      'Gemini': 3, 'Libra': 3, 'Aquarius': 3,        // Air
-      'Cancer': 4, 'Scorpio': 4, 'Pisces': 4,        // Water
-    };
-    
-    const group1 = signGroups[moon1] || 0;
-    const group2 = signGroups[moon2] || 0;
+    const group1 = SIGN_GROUPS[moon1] ?? 0;
+    const group2 = SIGN_GROUPS[moon2] ?? 0;
     
     let score = 0;
     if (group1 === group2) {
@@ -459,19 +379,8 @@ export class CompatibilityService {
       };
     }
     
-    // Gana mapping (Deva, Manushya, Rakshasa)
-    const ganaMap: Record<string, string> = {
-      'Ashwini': 'Deva', 'Bharani': 'Manushya', 'Krittika': 'Rakshasa', 'Rohini': 'Manushya',
-      'Mrigashira': 'Deva', 'Ardra': 'Manushya', 'Punarvasu': 'Deva', 'Pushya': 'Deva',
-      'Ashlesha': 'Rakshasa', 'Magha': 'Rakshasa', 'Purva Phalguni': 'Manushya', 'Uttara Phalguni': 'Manushya',
-      'Hasta': 'Deva', 'Chitra': 'Rakshasa', 'Swati': 'Rakshasa', 'Vishakha': 'Rakshasa',
-      'Anuradha': 'Deva', 'Jyeshta': 'Rakshasa', 'Mula': 'Rakshasa', 'Purva Ashadha': 'Manushya',
-      'Uttara Ashadha': 'Manushya', 'Shravana': 'Deva', 'Dhanishta': 'Rakshasa', 'Shatabhisha': 'Rakshasa',
-      'Purva Bhadrapada': 'Manushya', 'Uttara Bhadrapada': 'Manushya', 'Revati': 'Deva',
-    };
-    
-    const gana1 = ganaMap[nakshatra1] || '';
-    const gana2 = ganaMap[nakshatra2] || '';
+    const gana1 = GANA_MAP[nakshatra1] || '';
+    const gana2 = GANA_MAP[nakshatra2] || '';
     
     if (!gana1 || !gana2) {
       return {
@@ -516,14 +425,7 @@ export class CompatibilityService {
   private calculateBhakoot(chart1: any, chart2: any): any {
     const moon1 = chart1.moonSign?.sign || chart1.moonSign || '';
     const moon2 = chart2.moonSign?.sign || chart2.moonSign || '';
-    
-    const signNumbers: Record<string, number> = {
-      'Aries': 1, 'Taurus': 2, 'Gemini': 3, 'Cancer': 4,
-      'Leo': 5, 'Virgo': 6, 'Libra': 7, 'Scorpio': 8,
-      'Sagittarius': 9, 'Capricorn': 10, 'Aquarius': 11, 'Pisces': 12,
-    };
-
-    const diff = Math.abs((signNumbers[moon1] || 0) - (signNumbers[moon2] || 0));
+    const diff = Math.abs((SIGN_NUMBERS[moon1] ?? 0) - (SIGN_NUMBERS[moon2] ?? 0));
     const hasDosha = diff === 6 || diff === 8 || diff === 12;
 
     return {
@@ -539,21 +441,8 @@ export class CompatibilityService {
     const moon2 = chart2.planets?.find((p: any) => p.planet === 'Moon');
     const nakshatra1 = moon1?.nakshatra || '';
     const nakshatra2 = moon2?.nakshatra || '';
-    
-    const nadiGroups: Record<string, string> = {
-      'Ashwini': 'Vata', 'Bharani': 'Vata', 'Krittika': 'Vata',
-      'Rohini': 'Kapha', 'Mrigashira': 'Kapha', 'Ardra': 'Kapha',
-      'Punarvasu': 'Vata', 'Pushya': 'Vata', 'Ashlesha': 'Vata',
-      'Magha': 'Pitta', 'Purva Phalguni': 'Pitta', 'Uttara Phalguni': 'Pitta',
-      'Hasta': 'Vata', 'Chitra': 'Vata', 'Swati': 'Vata',
-      'Vishakha': 'Pitta', 'Anuradha': 'Pitta', 'Jyeshta': 'Pitta',
-      'Mula': 'Kapha', 'Purva Ashadha': 'Kapha', 'Uttara Ashadha': 'Kapha',
-      'Shravana': 'Vata', 'Dhanishta': 'Vata', 'Shatabhisha': 'Vata',
-      'Purva Bhadrapada': 'Pitta', 'Uttara Bhadrapada': 'Pitta', 'Revati': 'Pitta',
-    };
-
-    const nadi1 = nadiGroups[nakshatra1] || '';
-    const nadi2 = nadiGroups[nakshatra2] || '';
+    const nadi1 = NADI_GROUPS[nakshatra1] || '';
+    const nadi2 = NADI_GROUPS[nakshatra2] || '';
     const hasDosha = nadi1 === nadi2 && nadi1 !== '';
 
     return {

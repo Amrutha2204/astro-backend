@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NAKSHATRAS } from '../common/constants/astrology.constants';
 import { AstrologyEngineService } from './astrology-engine.service';
 import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
 
@@ -245,9 +246,7 @@ describe('AstrologyEngineService', () => {
 
       result.planets.forEach((planet) => {
         expect(planet.nakshatra).toBeDefined();
-        expect(['Ashwini', 'Bharani', 'Krittika', 'Rohini']).toContain(
-          planet.nakshatra,
-        );
+        expect(NAKSHATRAS).toContain(planet.nakshatra);
       });
     });
 

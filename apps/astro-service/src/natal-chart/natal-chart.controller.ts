@@ -50,7 +50,7 @@ export class NatalChartController {
           { planet: 'Sun', sign: 'Dhanu' },
           { planet: 'Moon', sign: 'Kumbha' },
         ],
-        source: 'Prokerala API',
+        source: 'Swiss Ephemeris',
       },
     },
   })
@@ -105,7 +105,7 @@ export class NatalChartController {
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const kundliDto = {
         dob: dobString,

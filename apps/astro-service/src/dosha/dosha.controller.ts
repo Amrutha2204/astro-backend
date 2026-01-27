@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -11,16 +13,47 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
 import { DoshaService } from './dosha.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { GuestKundliRequestDto } from '../kundli/dto/guest-kundli.dto';
 
 @Controller('api/v1/dosha')
 @ApiTags('Dosha')
 export class DoshaController {
   constructor(private readonly doshaService: DoshaService) {}
+
+  @Post('guest')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Check Doshas (Manglik, Nadi, Bhakoot) from birth details – no login' })
+  @ApiBody({ type: GuestKundliRequestDto })
+  @ApiOkResponse({ description: 'Dosha check completed successfully' })
+  async checkDoshasGuest(@Body() dto: GuestKundliRequestDto) {
+    try {
+      const birthTime = dto.birthTime.split(':').length === 2
+        ? `${dto.birthTime}:00`
+        : dto.birthTime;
+      const [hours = 12, minutes = 0] = birthTime.split(':').map(Number);
+      const { lat, lng } = await getCoordinatesFromCity(dto.placeOfBirth.trim());
+      const dob = new Date(dto.dob);
+      const result = await this.doshaService.checkDoshas(
+        dob.getFullYear(),
+        dob.getMonth() + 1,
+        dob.getDate(),
+        hours,
+        minutes,
+        lat,
+        lng,
+      );
+      return { ...result, source: 'Swiss Ephemeris' };
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      throw new HttpException('Failed to check doshas.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   @Get('check')
   @HttpCode(HttpStatus.OK)
@@ -68,7 +101,7 @@ export class DoshaController {
       const dob = new Date(userDetails.dob);
       const birthTime = userDetails.birthTime || '12:00:00';
       const [hours, minutes] = birthTime.split(':').map(Number);
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const doshaDetails = await this.doshaService.checkDoshas(
         dob.getFullYear(),
@@ -141,7 +174,7 @@ export class DoshaController {
       const dob = new Date(userDetails.dob);
       const birthTime = userDetails.birthTime || '12:00:00';
       const [hours, minutes] = birthTime.split(':').map(Number);
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const doshaDetails = await this.doshaService.checkDoshas(
         dob.getFullYear(),

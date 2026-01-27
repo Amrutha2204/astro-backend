@@ -1,22 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  MANGLIK_HOUSES,
+  MANGLIK_SIGNS,
+  NADI_GROUPS,
+  SIGN_NUMBERS,
+} from '../common/constants/astrology.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import type { DoshaDetails } from './interfaces/dosha.interface';
 
-export interface DoshaDetails {
-  manglik: {
-    hasDosha: boolean;
-    description: string;
-    severity?: 'High' | 'Medium' | 'Low' | 'None';
-  };
-  nadi: {
-    hasDosha: boolean;
-    description: string;
-  };
-  bhakoot: {
-    hasDosha: boolean;
-    description: string;
-  };
-  totalDoshas: number;
-}
+export type { DoshaDetails } from './interfaces/dosha.interface';
 
 @Injectable()
 export class DoshaService {
@@ -77,14 +69,9 @@ export class DoshaService {
     const marsSign = marsPlanet.sign.toLowerCase();
     const marsLongitude = marsPlanet.longitude || 0;
     
-    // Correct Manglik signs: Aries, Scorpio, Capricorn (Sagittarius removed)
-    const manglikSigns = ['aries', 'scorpio', 'capricorn'];
-    const hasSignDosha = manglikSigns.includes(marsSign);
-    
-    // Check if Mars is in Manglik houses (1st, 4th, 7th, 8th, 12th)
+    const hasSignDosha = (MANGLIK_SIGNS as readonly string[]).includes(marsSign);
     const marsHouse = this.getPlanetHouse(marsLongitude, chart.houses);
-    const manglikHouses = [1, 4, 7, 8, 12];
-    const hasHouseDosha = marsHouse && manglikHouses.includes(marsHouse);
+    const hasHouseDosha = marsHouse != null && (MANGLIK_HOUSES as readonly number[]).includes(marsHouse);
     
     const hasDosha = hasSignDosha || hasHouseDosha;
 
@@ -176,38 +163,7 @@ export class DoshaService {
 
   private checkNadiDosha(chart: any): any {
     const moonNakshatra = chart.planets.find((p: any) => p.planet === 'Moon')?.nakshatra || '';
-    
-    const nadiGroups: Record<string, string> = {
-      'Ashwini': 'Vata',
-      'Bharani': 'Vata',
-      'Krittika': 'Vata',
-      'Rohini': 'Kapha',
-      'Mrigashira': 'Kapha',
-      'Ardra': 'Kapha',
-      'Punarvasu': 'Vata',
-      'Pushya': 'Vata',
-      'Ashlesha': 'Vata',
-      'Magha': 'Pitta',
-      'Purva Phalguni': 'Pitta',
-      'Uttara Phalguni': 'Pitta',
-      'Hasta': 'Vata',
-      'Chitra': 'Vata',
-      'Swati': 'Vata',
-      'Vishakha': 'Pitta',
-      'Anuradha': 'Pitta',
-      'Jyeshta': 'Pitta',
-      'Mula': 'Kapha',
-      'Purva Ashadha': 'Kapha',
-      'Uttara Ashadha': 'Kapha',
-      'Shravana': 'Vata',
-      'Dhanishta': 'Vata',
-      'Shatabhisha': 'Vata',
-      'Purva Bhadrapada': 'Pitta',
-      'Uttara Bhadrapada': 'Pitta',
-      'Revati': 'Pitta',
-    };
-
-    const nadi = nadiGroups[moonNakshatra] || 'Unknown';
+    const nadi = NADI_GROUPS[moonNakshatra] || 'Unknown';
     
     return {
       hasDosha: false,
@@ -218,15 +174,8 @@ export class DoshaService {
   private checkBhakootDosha(chart: any): any {
     const moonSign = chart.moonSign.sign.toLowerCase();
     const sunSign = chart.sunSign.sign.toLowerCase();
-    
-    const signNumbers: Record<string, number> = {
-      'aries': 1, 'taurus': 2, 'gemini': 3, 'cancer': 4,
-      'leo': 5, 'virgo': 6, 'libra': 7, 'scorpio': 8,
-      'sagittarius': 9, 'capricorn': 10, 'aquarius': 11, 'pisces': 12,
-    };
-
-    const moonNum = signNumbers[moonSign] || 0;
-    const sunNum = signNumbers[sunSign] || 0;
+    const moonNum = SIGN_NUMBERS[moonSign] ?? 0;
+    const sunNum = SIGN_NUMBERS[sunSign] ?? 0;
     
     const difference = Math.abs(moonNum - sunNum);
     const hasDosha = difference === 6 || difference === 8 || difference === 12;
@@ -283,21 +232,8 @@ export class DoshaService {
     const moon2 = vedicChart2.planets?.find((p: any) => p.planet === 'Moon');
     const nadi1 = moon1?.nakshatra || '';
     const nadi2 = moon2?.nakshatra || '';
-    
-    const nadiGroups: Record<string, string> = {
-      'Ashwini': 'Vata', 'Bharani': 'Vata', 'Krittika': 'Vata',
-      'Rohini': 'Kapha', 'Mrigashira': 'Kapha', 'Ardra': 'Kapha',
-      'Punarvasu': 'Vata', 'Pushya': 'Vata', 'Ashlesha': 'Vata',
-      'Magha': 'Pitta', 'Purva Phalguni': 'Pitta', 'Uttara Phalguni': 'Pitta',
-      'Hasta': 'Vata', 'Chitra': 'Vata', 'Swati': 'Vata',
-      'Vishakha': 'Pitta', 'Anuradha': 'Pitta', 'Jyeshta': 'Pitta',
-      'Mula': 'Kapha', 'Purva Ashadha': 'Kapha', 'Uttara Ashadha': 'Kapha',
-      'Shravana': 'Vata', 'Dhanishta': 'Vata', 'Shatabhisha': 'Vata',
-      'Purva Bhadrapada': 'Pitta', 'Uttara Bhadrapada': 'Pitta', 'Revati': 'Pitta',
-    };
-
-    const nadi1Type = nadiGroups[nadi1] || '';
-    const nadi2Type = nadiGroups[nadi2] || '';
+    const nadi1Type = NADI_GROUPS[nadi1] || '';
+    const nadi2Type = NADI_GROUPS[nadi2] || '';
     
     const nadiCompatibility = nadi1Type === nadi2Type && nadi1Type !== ''
       ? 'Nadi dosha present - same Nadi'
@@ -305,14 +241,7 @@ export class DoshaService {
 
     const moonSign1 = vedicChart1.moonSign?.sign || vedicChart1.moonSign || '';
     const moonSign2 = vedicChart2.moonSign?.sign || vedicChart2.moonSign || '';
-    
-    const signNumbers: Record<string, number> = {
-      'Aries': 1, 'Taurus': 2, 'Gemini': 3, 'Cancer': 4,
-      'Leo': 5, 'Virgo': 6, 'Libra': 7, 'Scorpio': 8,
-      'Sagittarius': 9, 'Capricorn': 10, 'Aquarius': 11, 'Pisces': 12,
-    };
-
-    const diff = Math.abs((signNumbers[moonSign1] || 0) - (signNumbers[moonSign2] || 0));
+    const diff = Math.abs((SIGN_NUMBERS[moonSign1] ?? 0) - (SIGN_NUMBERS[moonSign2] ?? 0));
     const hasBhakootDosha = diff === 6 || diff === 8 || diff === 12;
     
     const bhakootCompatibility = hasBhakootDosha

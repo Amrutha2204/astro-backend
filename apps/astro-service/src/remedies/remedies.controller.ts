@@ -68,7 +68,7 @@ export class RemediesController {
       const dob = new Date(userDetails.dob);
       const birthTime = userDetails.birthTime || '12:00:00';
       const [hours, minutes] = birthTime.split(':').map(Number);
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const remedies = await this.remediesService.getRemedies(
         dob.getFullYear(),
@@ -138,7 +138,7 @@ export class RemediesController {
         );
       }
 
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
       const remedies = await this.remediesService.getRemedies(
         1990, 1, 1, 12, 0,
         coordinates.lat,

@@ -1,15 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { HoroscopeController } from './horoscope.controller';
 import { HoroscopeService } from './horoscope.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 describe('HoroscopeController', () => {
   let controller: HoroscopeController;
   let service: HoroscopeService;
 
   const mockHoroscopeService = {
-    getMyDayToday: jest.fn(),
+    getWeeklyHoroscope: jest.fn(),
+    getMonthlyHoroscope: jest.fn(),
   };
+
+  const mockUser = { token: 'test-token' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,7 +23,10 @@ describe('HoroscopeController', () => {
           useValue: mockHoroscopeService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<HoroscopeController>(HoroscopeController);
     service = module.get<HoroscopeService>(HoroscopeService);
@@ -30,74 +36,80 @@ describe('HoroscopeController', () => {
     jest.clearAllMocks();
   });
 
-  describe('getMyDayToday', () => {
-    const mockRequest = {
-      headers: {
-        authorization: 'Bearer test-token',
-      },
-    };
-
-    const mockResponse = {
-      sign: 'capricorn',
-      date: '2024-01-15',
-      horoscope: {
-        daily_prediction: {
-          sign_name: 'Capricorn',
-          prediction: 'Test prediction',
+  describe('getWeeklyHoroscope', () => {
+    const mockWeeklyResponse = {
+      weekStart: '2025-01-27',
+      predictions: [
+        {
+          date: '2025-01-27',
+          day: 'Monday',
+          horoscope: {
+            dayType: 'neutral',
+            mainTheme: 'Test theme',
+            reason: 'Test reason',
+          },
         },
-      },
-      source: 'Prokerala API',
+      ],
+      source: 'Swiss Ephemeris',
     };
 
-    it('should return personalized horoscope', async () => {
-      mockHoroscopeService.getMyDayToday.mockResolvedValue(mockResponse);
-
-      const result = await controller.getMyDayToday(mockRequest);
-
-      expect(service.getMyDayToday).toHaveBeenCalledWith('test-token', undefined);
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should pass date parameter when provided', async () => {
-      mockHoroscopeService.getMyDayToday.mockResolvedValue(mockResponse);
-
-      await controller.getMyDayToday(mockRequest, '2024-01-20');
-
-      expect(service.getMyDayToday).toHaveBeenCalledWith(
-        'test-token',
-        '2024-01-20',
+    it('should return personalized weekly horoscope', async () => {
+      mockHoroscopeService.getWeeklyHoroscope.mockResolvedValue(
+        mockWeeklyResponse,
       );
+
+      const result = await controller.getWeeklyHoroscope(mockUser);
+
+      expect(service.getWeeklyHoroscope).toHaveBeenCalledWith('test-token');
+      expect(result).toEqual(mockWeeklyResponse);
     });
 
-    it('should throw HttpException when authorization header is missing', async () => {
-      const requestWithoutAuth = {
-        headers: {},
-      };
+    it('should pass user.token to the service', async () => {
+      mockHoroscopeService.getWeeklyHoroscope.mockResolvedValue(
+        mockWeeklyResponse,
+      );
 
-      await expect(
-        controller.getMyDayToday(requestWithoutAuth),
-      ).rejects.toThrow(HttpException);
+      await controller.getWeeklyHoroscope({ token: 'custom-token' });
+
+      expect(service.getWeeklyHoroscope).toHaveBeenCalledWith('custom-token');
     });
+  });
 
-    it('should throw HttpException when authorization header does not start with Bearer', async () => {
-      const requestWithInvalidAuth = {
-        headers: {
-          authorization: 'Invalid token',
+  describe('getMonthlyHoroscope', () => {
+    const mockMonthlyResponse = {
+      monthStart: '2025-01-27',
+      predictions: [
+        {
+          date: '2025-01-27',
+          horoscope: {
+            dayType: 'neutral',
+            mainTheme: 'Test theme',
+            reason: 'Test reason',
+          },
         },
-      };
+      ],
+      source: 'Swiss Ephemeris',
+    };
 
-      await expect(
-        controller.getMyDayToday(requestWithInvalidAuth),
-      ).rejects.toThrow(HttpException);
+    it('should return personalized monthly horoscope', async () => {
+      mockHoroscopeService.getMonthlyHoroscope.mockResolvedValue(
+        mockMonthlyResponse,
+      );
+
+      const result = await controller.getMonthlyHoroscope(mockUser);
+
+      expect(service.getMonthlyHoroscope).toHaveBeenCalledWith('test-token');
+      expect(result).toEqual(mockMonthlyResponse);
     });
 
-    it('should extract token correctly from Bearer header', async () => {
-      mockHoroscopeService.getMyDayToday.mockResolvedValue(mockResponse);
+    it('should pass user.token to the service', async () => {
+      mockHoroscopeService.getMonthlyHoroscope.mockResolvedValue(
+        mockMonthlyResponse,
+      );
 
-      await controller.getMyDayToday(mockRequest);
+      await controller.getMonthlyHoroscope({ token: 'custom-token' });
 
-      expect(service.getMyDayToday).toHaveBeenCalledWith('test-token', undefined);
+      expect(service.getMonthlyHoroscope).toHaveBeenCalledWith('custom-token');
     });
   });
 });
-

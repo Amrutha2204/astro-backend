@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -11,6 +12,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CalendarService } from './calendar.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
@@ -21,6 +23,25 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @ApiTags('Astrology')
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
+
+  @Get('calendar/today/guest')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get today’s astrology calendar (moon, tithi, nakshatra) by city – no login',
+  })
+  @ApiQuery({
+    name: 'placeOfBirth',
+    required: false,
+    description: 'City name for location; defaults to Delhi if omitted',
+  })
+  @ApiOkResponse({ description: 'Calendar retrieved successfully' })
+  async getTodayCalendarGuest(
+    @Query('placeOfBirth') placeOfBirth?: string,
+  ) {
+    const city = (placeOfBirth || 'Delhi').trim();
+    const { lat, lng } = await getCoordinatesFromCity(city);
+    return this.calendarService.getTodayCalendar(lat, lng);
+  }
 
   @Get('calendar/today')
   @HttpCode(HttpStatus.OK)
@@ -38,7 +59,7 @@ export class CalendarController {
         nakshatra: 'Magha',
         majorPlanetaryEvents: ['Auspicious periods available'],
         date: '2024-01-15',
-        source: 'Prokerala API',
+        source: 'Swiss Ephemeris',
       },
     },
   })
@@ -87,7 +108,7 @@ export class CalendarController {
         );
       }
 
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       return this.calendarService.getTodayCalendar(
         coordinates.lat,

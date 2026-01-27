@@ -9,14 +9,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NatalChartService } from '../natal-chart/natal-chart.service';
 import { TransitsService } from '../transits/transits.service';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { RateLimitEntry } from '../common/interfaces/ai-assistant.interface';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { ChatDto } from './dto/chat.dto';
 import { ExplainKundliDto } from './dto/explain-kundli.dto';
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: Date;
-}
 
 @Injectable()
 export class AiAssistantService {
@@ -388,7 +384,7 @@ IMPORTANT RULES:
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const natalChart = await this.natalChartService.getNatalChart({
         dob: dobString,
@@ -459,7 +455,7 @@ IMPORTANT RULES:
       const day = dob.getDate();
       const birthTime = userDetails.birthTime || '12:00:00';
       const [hours, minutes] = birthTime.split(':').map(Number);
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const vedicChart = await this.astrologyEngineService.calculateVedicChart(
         {
@@ -535,7 +531,7 @@ IMPORTANT RULES:
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const natalChart = await this.natalChartService.getNatalChart({
         dob: dobString,

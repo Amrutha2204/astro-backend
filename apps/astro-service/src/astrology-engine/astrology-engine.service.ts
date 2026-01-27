@@ -1,88 +1,44 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  HouseSystem,
+  HOUSE_SYSTEM_MAP,
+  NAKSHATRAS,
+  ZODIAC_SIGNS,
+} from '../common/constants/astrology.constants';
 import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
+import { BirthDetails, VedicChartData } from './interfaces/astrology-engine.interface';
+import { BirthChartDto } from './dto/birth-chart.dto';
 
-export interface BirthDetails {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  latitude: number;
-  longitude: number;
-}
-
-export interface VedicChartData {
-  lagna: {
-    sign: string;
-    degree: number;
-    longitude: number;
-  };
-  sunSign: {
-    sign: string;
-    degree: number;
-    longitude: number;
-  };
-  moonSign: {
-    sign: string;
-    degree: number;
-    longitude: number;
-  };
-  planets: Array<{
-    planet: string;
-    sign: string;
-    degree: number;
-    longitude: number;
-    nakshatra?: string;
-    pada?: number;
-  }>;
-  houses: Array<{
-    house: number;
-    sign: string;
-    degree: number;
-    longitude: number;
-  }>;
-}
+export type { BirthDetails, VedicChartData } from './interfaces/astrology-engine.interface';
 
 @Injectable()
 export class AstrologyEngineService {
   private readonly logger = new Logger(AstrologyEngineService.name);
-  private readonly nakshatras = [
-    'Ashwini',
-    'Bharani',
-    'Krittika',
-    'Rohini',
-    'Mrigashira',
-    'Ardra',
-    'Punarvasu',
-    'Pushya',
-    'Ashlesha',
-    'Magha',
-    'Purva Phalguni',
-    'Uttara Phalguni',
-    'Hasta',
-    'Chitra',
-    'Swati',
-    'Vishakha',
-    'Anuradha',
-    'Jyeshta',
-    'Mula',
-    'Purva Ashadha',
-    'Uttara Ashadha',
-    'Shravana',
-    'Dhanishta',
-    'Shatabhisha',
-    'Purva Bhadrapada',
-    'Uttara Bhadrapada',
-    'Revati',
-  ];
 
   constructor(
     private readonly swissEphemerisService: SwissEphemerisService,
   ) {}
 
+  mapDtoToBirthDetails(dto: BirthChartDto): BirthDetails {
+    const houseSystem =
+      dto.houseSystem != null
+        ? (HOUSE_SYSTEM_MAP[String(dto.houseSystem).toLowerCase()] ?? HouseSystem.Placidus)
+        : HouseSystem.Placidus;
+    return {
+      year: dto.year,
+      month: dto.month,
+      day: dto.day,
+      hour: dto.hour ?? 12,
+      minute: dto.minute ?? 0,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      houseSystem,
+    };
+  }
+
   private getNakshatra(longitude: number): { name: string; pada: number } {
     const nakshatraIndex = Math.floor(longitude / (360 / 27));
-    const nakshatra = this.nakshatras[nakshatraIndex % 27];
+    const nakshatra = NAKSHATRAS[nakshatraIndex % 27];
     const remainder = longitude % (360 / 27);
     const pada = Math.floor(remainder / (360 / 27 / 4)) + 1;
     return { name: nakshatra, pada: Math.min(pada, 4) };
@@ -92,6 +48,7 @@ export class AstrologyEngineService {
     birthDetails: BirthDetails,
   ): Promise<VedicChartData> {
     try {
+      const houseSystem = birthDetails.houseSystem ?? HouseSystem.Placidus;
       const tropicalChart = await this.swissEphemerisService.calculateBirthChart(
         birthDetails.year,
         birthDetails.month,
@@ -100,6 +57,7 @@ export class AstrologyEngineService {
         birthDetails.minute,
         birthDetails.latitude,
         birthDetails.longitude,
+        houseSystem,
       );
 
       const julianDay = tropicalChart.julianDay;
@@ -190,6 +148,7 @@ export class AstrologyEngineService {
     birthDetails: BirthDetails,
   ): Promise<any> {
     try {
+      const houseSystem = birthDetails.houseSystem ?? HouseSystem.Placidus;
       const chart = await this.swissEphemerisService.calculateBirthChart(
         birthDetails.year,
         birthDetails.month,
@@ -198,6 +157,7 @@ export class AstrologyEngineService {
         birthDetails.minute,
         birthDetails.latitude,
         birthDetails.longitude,
+        houseSystem,
       );
 
       return {
@@ -219,24 +179,10 @@ export class AstrologyEngineService {
    * Convert longitude to sign and degree within sign
    */
   private longitudeToSign(longitude: number): { sign: string; degree: number } {
-    const zodiacSigns = [
-      'Aries',
-      'Taurus',
-      'Gemini',
-      'Cancer',
-      'Leo',
-      'Virgo',
-      'Libra',
-      'Scorpio',
-      'Sagittarius',
-      'Capricorn',
-      'Aquarius',
-      'Pisces',
-    ];
     const signIndex = Math.floor(longitude / 30);
     const degree = longitude % 30;
     return {
-      sign: zodiacSigns[signIndex % 12],
+      sign: ZODIAC_SIGNS[signIndex % 12],
       degree: degree,
     };
   }

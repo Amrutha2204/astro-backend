@@ -1,7 +1,9 @@
 import {
   Controller,
   Get,
+  Post,
   Query,
+  Body,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -13,17 +15,35 @@ import {
   ApiTags,
   ApiQuery,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
 import { HoroscopeRuleService } from './horoscope-rule.service';
-import { ChartType } from '../common/utils/coordinates.util';
-import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { ChartType, getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { GuestKundliRequestDto } from '../kundli/dto/guest-kundli.dto';
 
 @Controller('api/v1/astrology')
 @ApiTags('Astrology')
 export class HoroscopeRuleController {
   constructor(private readonly horoscopeRuleService: HoroscopeRuleService) {}
+
+  @Post('horoscope/today/guest')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get daily horoscope from birth details – no login' })
+  @ApiBody({ type: GuestKundliRequestDto })
+  @ApiOkResponse({ description: 'Horoscope generated successfully' })
+  async getTodayHoroscopeGuest(@Body() dto: GuestKundliRequestDto) {
+    try {
+      const birthTime = dto.birthTime.split(':').length === 2 ? `${dto.birthTime}:00` : dto.birthTime;
+      const { lat, lng } = await getCoordinatesFromCity(dto.placeOfBirth.trim());
+      const kundliDto = { dob: dto.dob, birthTime, latitude: lat, longitude: lng };
+      return this.horoscopeRuleService.getTodayHoroscope(kundliDto);
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      throw new HttpException('Failed to fetch horoscope.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   @Get('horoscope/today')
   @HttpCode(HttpStatus.OK)
@@ -102,7 +122,7 @@ export class HoroscopeRuleController {
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const kundliDto = {
         dob: dobString,

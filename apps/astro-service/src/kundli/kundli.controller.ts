@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Query,
   HttpCode,
   HttpStatus,
@@ -16,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { KundliService } from './kundli.service';
 import { KundliDto } from './dto/kundli.dto';
+import { GuestKundliRequestDto } from './dto/guest-kundli.dto';
 import {
   ChartType,
   getCoordinatesFromCity,
@@ -27,6 +30,53 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @ApiTags('Kundli')
 export class KundliController {
   constructor(private readonly kundliService: KundliService) {}
+
+  @Post('guest')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get Kundli for guest (no login). Uses birth details only. No data is stored.',
+  })
+  @ApiOkResponse({
+    description: 'Kundli calculated successfully',
+    schema: {
+      example: {
+        lagna: 'Aries',
+        moonSign: 'Leo',
+        nakshatra: 'Magha',
+        planetaryPositions: [],
+        houses: [],
+        source: 'Swiss Ephemeris',
+      },
+    },
+  })
+  async getGuestKundli(@Body() dto: GuestKundliRequestDto) {
+    try {
+      const birthTime =
+        dto.birthTime.split(':').length === 2
+          ? `${dto.birthTime}:00`
+          : dto.birthTime;
+      const coordinates = await getCoordinatesFromCity(dto.placeOfBirth);
+
+      const kundliDto: KundliDto = {
+        dob: dto.dob,
+        birthTime,
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        chartType: ChartType.NorthIndian,
+      };
+
+      return this.kundliService.getKundli(kundliDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        'Failed to calculate Kundli. Please check your birth details and try again.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   @Get('my-kundli')
   @HttpCode(HttpStatus.OK)
@@ -51,7 +101,7 @@ export class KundliController {
         nakshatra: 'Magha',
         planetaryPositions: {},
         houses: {},
-        source: 'Prokerala API',
+        source: 'Swiss Ephemeris',
       },
     },
   })
@@ -106,7 +156,7 @@ export class KundliController {
       const dob = new Date(userDetails.dob);
       const dobString = dob.toISOString().split('T')[0];
       const birthTime = userDetails.birthTime || '12:00:00';
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       const kundliDto: KundliDto = {
         dob: dobString,

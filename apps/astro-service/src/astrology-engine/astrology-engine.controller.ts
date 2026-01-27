@@ -15,7 +15,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { AstrologyEngineService } from './astrology-engine.service';
-import { BirthChartDto, HouseSystem } from './dto/birth-chart.dto';
+import { BirthChartDto } from './dto/birth-chart.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('api/v1/astrology-engine')
@@ -75,37 +75,9 @@ export class AstrologyEngineController {
     },
   })
   async calculateVedicChart(@Body() dto: BirthChartDto) {
-
     try {
-      const houseSystemMap: Record<string, HouseSystem> = {
-        'placidus': HouseSystem.Placidus,
-        'koch': HouseSystem.Koch,
-        'equal': HouseSystem.Equal,
-        'whole-sign': HouseSystem.WholeSign,
-        'wholeSign': HouseSystem.WholeSign,
-        'P': HouseSystem.Placidus,
-        'K': HouseSystem.Koch,
-        'E': HouseSystem.Equal,
-        'W': HouseSystem.WholeSign,
-      };
-
-      const houseSystem = dto.houseSystem 
-        ? (houseSystemMap[dto.houseSystem.toLowerCase()] || HouseSystem.Placidus)
-        : HouseSystem.Placidus;
-
-      const birthDetails = {
-        year: dto.year,
-        month: dto.month,
-        day: dto.day,
-        hour: dto.hour || 12,
-        minute: dto.minute || 0,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        houseSystem,
-      };
-
       return await this.astrologyEngineService.calculateVedicChart(
-        birthDetails,
+        this.astrologyEngineService.mapDtoToBirthDetails(dto),
       );
     } catch (error) {
       throw new HttpException(
@@ -117,6 +89,7 @@ export class AstrologyEngineController {
 
   @Post('western-chart')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Calculate Western birth chart using Swiss Ephemeris',
@@ -128,37 +101,9 @@ export class AstrologyEngineController {
     description: 'Western birth chart calculated successfully',
   })
   async calculateWesternChart(@Body() dto: BirthChartDto) {
-
     try {
-      const houseSystemMap: Record<string, HouseSystem> = {
-        'placidus': HouseSystem.Placidus,
-        'koch': HouseSystem.Koch,
-        'equal': HouseSystem.Equal,
-        'whole-sign': HouseSystem.WholeSign,
-        'wholeSign': HouseSystem.WholeSign,
-        'P': HouseSystem.Placidus,
-        'K': HouseSystem.Koch,
-        'E': HouseSystem.Equal,
-        'W': HouseSystem.WholeSign,
-      };
-
-      const houseSystem = dto.houseSystem 
-        ? (houseSystemMap[dto.houseSystem.toLowerCase()] || HouseSystem.Placidus)
-        : HouseSystem.Placidus;
-
-      const birthDetails = {
-        year: dto.year,
-        month: dto.month,
-        day: dto.day,
-        hour: dto.hour || 12,
-        minute: dto.minute || 0,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        houseSystem,
-      };
-
       return await this.astrologyEngineService.calculateWesternChart(
-        birthDetails,
+        this.astrologyEngineService.mapDtoToBirthDetails(dto),
       );
     } catch (error) {
       throw new HttpException(
