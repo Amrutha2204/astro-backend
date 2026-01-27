@@ -75,25 +75,103 @@ export class DoshaService {
     }
 
     const marsSign = marsPlanet.sign.toLowerCase();
-    const manglikSigns = ['aries', 'scorpio', 'sagittarius', 'capricorn'];
-    const hasDosha = manglikSigns.includes(marsSign);
+    const marsLongitude = marsPlanet.longitude || 0;
+    
+    // Correct Manglik signs: Aries, Scorpio, Capricorn (Sagittarius removed)
+    const manglikSigns = ['aries', 'scorpio', 'capricorn'];
+    const hasSignDosha = manglikSigns.includes(marsSign);
+    
+    // Check if Mars is in Manglik houses (1st, 4th, 7th, 8th, 12th)
+    const marsHouse = this.getPlanetHouse(marsLongitude, chart.houses);
+    const manglikHouses = [1, 4, 7, 8, 12];
+    const hasHouseDosha = marsHouse && manglikHouses.includes(marsHouse);
+    
+    const hasDosha = hasSignDosha || hasHouseDosha;
 
     let severity: 'High' | 'Medium' | 'Low' | 'None' = 'None';
+    let description = '';
+    
     if (hasDosha) {
       if (marsSign === 'aries' || marsSign === 'scorpio') {
         severity = 'High';
-      } else {
+      } else if (marsSign === 'capricorn') {
+        severity = 'Medium';
+      } else if (hasHouseDosha) {
         severity = 'Medium';
       }
+      
+      const reasons: string[] = [];
+      if (hasSignDosha) {
+        reasons.push(`Mars is in ${marsPlanet.sign} sign`);
+      }
+      if (hasHouseDosha) {
+        reasons.push(`Mars is in ${marsHouse}th house`);
+      }
+      
+      description = `Manglik dosha present. ${reasons.join(' and ')}.`;
+    } else {
+      description = 'The person is not Manglik.';
     }
 
     return {
       hasDosha,
-      description: hasDosha
-        ? `Mars is placed in ${marsPlanet.sign}, indicating Manglik dosha.`
-        : 'The person is not Manglik.',
+      description,
       severity,
     };
+  }
+
+  private getPlanetHouse(planetLongitude: number, houses: any[]): number | null {
+    if (!houses || houses.length === 0) {
+      return null;
+    }
+    
+    // Normalize planet longitude to 0-360
+    const normalizedLongitude = ((planetLongitude % 360) + 360) % 360;
+    
+    // Get house cusps with longitudes
+    const houseCusps = houses
+      .filter(h => h.longitude !== undefined && h.longitude !== null)
+      .map(h => ({
+        house: h.house,
+        longitude: ((h.longitude % 360) + 360) % 360,
+      }))
+      .sort((a, b) => a.longitude - b.longitude);
+    
+    if (houseCusps.length === 0) {
+      return null;
+    }
+    
+    // Find which house the planet is in
+    for (let i = 0; i < houseCusps.length; i++) {
+      const currentHouse = houseCusps[i];
+      const nextHouse = houseCusps[(i + 1) % houseCusps.length];
+      
+      let currentLong = currentHouse.longitude;
+      let nextLong = nextHouse.longitude;
+      
+      // Handle wrap-around (house 12 to house 1)
+      if (nextLong < currentLong) {
+        nextLong += 360;
+      }
+      
+      let planetLong = normalizedLongitude;
+      if (planetLong < currentLong) {
+        planetLong += 360;
+      }
+      
+      if (planetLong >= currentLong && planetLong < nextLong) {
+        return currentHouse.house;
+      }
+    }
+    
+    // Fallback: check if planet is before first house cusp (house 12)
+    const firstHouseLong = houseCusps[0].longitude;
+    if (normalizedLongitude < firstHouseLong) {
+      const lastHouse = houseCusps[houseCusps.length - 1];
+      return lastHouse.house;
+    }
+    
+    return null;
   }
 
   private checkNadiDosha(chart: any): any {

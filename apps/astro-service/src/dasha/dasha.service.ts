@@ -152,6 +152,7 @@ export class DashaService {
     let currentPlanet = this.dashaOrder[0];
     let currentStartDate = new Date(startDate);
     
+    // Find current mahadasha
     for (const planet of this.dashaOrder) {
       const planetDuration = this.dashaDurations[planet] * 365;
       
@@ -164,30 +165,38 @@ export class DashaService {
       currentStartDate = new Date(currentStartDate.getTime() + planetDuration * 24 * 60 * 60 * 1000);
     }
     
-    const planetDuration = this.dashaDurations[currentPlanet] * 365;
-    const antardashaStartPlanet = this.dashaOrder[this.dashaOrder.indexOf(currentPlanet)];
-    const antardashaProgress = remainingDays / planetDuration;
-    const antardashaDuration = (this.dashaDurations[antardashaStartPlanet] * 365) / 12;
-    const currentAntardashaDays = remainingDays % antardashaDuration;
-    const antardashaIndex = Math.floor(remainingDays / antardashaDuration);
+    const mahadashaDuration = this.dashaDurations[currentPlanet] * 365;
+    const mahadashaStartDate = new Date(currentStartDate);
     
-    const antardashaPlanet = this.dashaOrder[
-      (this.dashaOrder.indexOf(currentPlanet) + antardashaIndex) % this.dashaOrder.length
-    ];
+    // Calculate antardasha (each mahadasha has 9 antardashas)
+    // Antardasha duration = (Mahadasha duration × Planet duration) / 120
+    let antardashaRemainingDays = remainingDays;
+    let antardashaPlanet = this.dashaOrder[0];
+    let antardashaStartDate = new Date(mahadashaStartDate);
     
-    const antardashaStart = new Date(currentStartDate);
-    antardashaStart.setDate(antardashaStart.getDate() + antardashaIndex * antardashaDuration);
+    for (const planet of this.dashaOrder) {
+      const antardashaDuration = Math.floor((mahadashaDuration * this.dashaDurations[planet]) / 120);
+      
+      if (antardashaRemainingDays < antardashaDuration) {
+        antardashaPlanet = planet;
+        break;
+      }
+      
+      antardashaRemainingDays -= antardashaDuration;
+      antardashaStartDate = new Date(antardashaStartDate.getTime() + antardashaDuration * 24 * 60 * 60 * 1000);
+    }
     
-    const antardashaEnd = new Date(antardashaStart);
-    antardashaEnd.setDate(antardashaEnd.getDate() + antardashaDuration);
+    const currentAntardashaDuration = Math.floor((mahadashaDuration * this.dashaDurations[antardashaPlanet]) / 120);
+    const antardashaEndDate = new Date(antardashaStartDate);
+    antardashaEndDate.setDate(antardashaEndDate.getDate() + currentAntardashaDuration);
     
     return {
       mahadasha: currentPlanet,
       antardasha: antardashaPlanet,
-      startDate: currentStartDate.toISOString().split('T')[0],
-      endDate: new Date(currentStartDate.getTime() + planetDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      startDate: mahadashaStartDate.toISOString().split('T')[0],
+      endDate: new Date(mahadashaStartDate.getTime() + mahadashaDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       planet: currentPlanet,
-      remainingDays: Math.floor(planetDuration - remainingDays),
+      remainingDays: Math.floor(mahadashaDuration - remainingDays),
     };
   }
 
@@ -197,28 +206,63 @@ export class DashaService {
     const endDate = new Date(currentDate);
     endDate.setFullYear(endDate.getFullYear() + years);
     
-    let planetIndex = 0;
+    // Find which mahadasha we're currently in
+    let totalDays = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    let currentMahadashaIndex = 0;
+    let mahadashaStart = new Date(startDate);
     
-    while (currentStart < endDate && timeline.length < 100) {
-      const planet = this.dashaOrder[planetIndex % this.dashaOrder.length];
-      const duration = this.dashaDurations[planet] * 365;
-      const end = new Date(currentStart);
-      end.setDate(end.getDate() + duration);
+    for (let i = 0; i < this.dashaOrder.length; i++) {
+      const planet = this.dashaOrder[i];
+      const planetDuration = this.dashaDurations[planet] * 365;
       
-      const antardashaPlanet = planet;
-      const antardashaDuration = duration / 12;
+      if (totalDays < planetDuration) {
+        currentMahadashaIndex = i;
+        break;
+      }
       
-      timeline.push({
-        dasha: planet,
-        antardasha: antardashaPlanet,
-        startDate: currentStart.toISOString().split('T')[0],
-        endDate: end.toISOString().split('T')[0],
-        planet: planet,
-        duration: duration,
-      });
+      totalDays -= planetDuration;
+      mahadashaStart = new Date(mahadashaStart.getTime() + planetDuration * 24 * 60 * 60 * 1000);
+    }
+    
+    // Generate timeline starting from current mahadasha
+    let mahadashaIndex = currentMahadashaIndex;
+    let timelineStart = new Date(mahadashaStart);
+    
+    while (timelineStart < endDate && timeline.length < 200) {
+      const mahadashaPlanet = this.dashaOrder[mahadashaIndex % this.dashaOrder.length];
+      const mahadashaDuration = this.dashaDurations[mahadashaPlanet] * 365;
+      const mahadashaEnd = new Date(timelineStart);
+      mahadashaEnd.setDate(mahadashaEnd.getDate() + mahadashaDuration);
       
-      currentStart = end;
-      planetIndex++;
+      // Generate antardashas for this mahadasha
+      let antardashaStart = new Date(timelineStart);
+      for (const antardashaPlanet of this.dashaOrder) {
+        const antardashaDuration = Math.floor((mahadashaDuration * this.dashaDurations[antardashaPlanet]) / 120);
+        const antardashaEnd = new Date(antardashaStart);
+        antardashaEnd.setDate(antardashaEnd.getDate() + antardashaDuration);
+        
+        if (antardashaStart >= endDate) {
+          break;
+        }
+        
+        timeline.push({
+          dasha: mahadashaPlanet,
+          antardasha: antardashaPlanet,
+          startDate: antardashaStart.toISOString().split('T')[0],
+          endDate: antardashaEnd.toISOString().split('T')[0],
+          planet: mahadashaPlanet,
+          duration: Math.floor(antardashaDuration / 365 * 10) / 10, // Convert to years with 1 decimal
+        });
+        
+        antardashaStart = antardashaEnd;
+        
+        if (antardashaStart >= endDate) {
+          break;
+        }
+      }
+      
+      timelineStart = mahadashaEnd;
+      mahadashaIndex++;
     }
     
     return timeline;

@@ -39,6 +39,7 @@ export interface VedicChartData {
     house: number;
     sign: string;
     degree: number;
+    longitude: number;
   }>;
 }
 
@@ -146,6 +147,7 @@ export class AstrologyEngineService {
           house: house.house,
           sign: sign,
           degree: degree,
+          longitude: siderealLongitude,
         };
       });
 

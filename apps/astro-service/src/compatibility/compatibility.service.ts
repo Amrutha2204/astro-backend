@@ -203,47 +203,313 @@ export class CompatibilityService {
   }
 
   private calculateVashya(chart1: any, chart2: any): any {
+    const moon1 = chart1.moonSign?.sign || chart1.moonSign || '';
+    const moon2 = chart2.moonSign?.sign || chart2.moonSign || '';
+    
+    // Vashya groups (5 groups based on Moon signs)
+    const vashyaGroups: Record<string, number> = {
+      'Aries': 1, 'Leo': 1, 'Sagittarius': 1,        // Group 1: Fire signs
+      'Taurus': 2, 'Virgo': 2, 'Capricorn': 2,        // Group 2: Earth signs
+      'Gemini': 3, 'Libra': 3, 'Aquarius': 3,        // Group 3: Air signs
+      'Cancer': 4, 'Scorpio': 4, 'Pisces': 4,        // Group 4: Water signs
+    };
+    
+    const group1 = vashyaGroups[moon1] || 0;
+    const group2 = vashyaGroups[moon2] || 0;
+    
+    let score = 0;
+    if (group1 === group2) {
+      score = 2; // Same group - excellent
+    } else if (
+      (group1 === 1 && group2 === 3) || (group1 === 3 && group2 === 1) || // Fire-Air
+      (group1 === 2 && group2 === 4) || (group1 === 4 && group2 === 2)    // Earth-Water
+    ) {
+      score = 1; // Compatible groups
+    } else {
+      score = 0; // Incompatible groups
+    }
+    
     return {
       name: 'Vashya',
-      score: 2,
+      score,
       maxScore: 2,
-      description: 'Vashya compatibility is favorable',
+      description: score === 2 
+        ? 'Vashya matching is excellent (same element)' 
+        : score === 1 
+        ? 'Vashya matching is good (compatible elements)' 
+        : 'Vashya matching needs attention',
     };
   }
 
   private calculateTara(chart1: any, chart2: any): any {
+    const moon1 = chart1.planets?.find((p: any) => p.planet === 'Moon');
+    const moon2 = chart2.planets?.find((p: any) => p.planet === 'Moon');
+    const nakshatra1 = moon1?.nakshatra || '';
+    const nakshatra2 = moon2?.nakshatra || '';
+    
+    if (!nakshatra1 || !nakshatra2) {
+      return {
+        name: 'Tara',
+        score: 0,
+        maxScore: 3,
+        description: 'Tara calculation requires nakshatra data',
+      };
+    }
+    
+    const nakshatras = [
+      'Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra',
+      'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni',
+      'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshta',
+      'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha',
+      'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati',
+    ];
+    
+    const index1 = nakshatras.indexOf(nakshatra1);
+    const index2 = nakshatras.indexOf(nakshatra2);
+    
+    if (index1 === -1 || index2 === -1) {
+      return {
+        name: 'Tara',
+        score: 0,
+        maxScore: 3,
+        description: 'Invalid nakshatra data',
+      };
+    }
+    
+    // Calculate Tara (9 tara system)
+    // Count from partner1's nakshatra to partner2's nakshatra
+    let tara = ((index2 - index1) % 27 + 27) % 27;
+    if (tara === 0) tara = 27;
+    
+    // Tara positions: 1,3,5,7,9 are good; 2,4,6,8 are bad
+    const goodTaras = [1, 3, 5, 7, 9];
+    const badTaras = [2, 4, 6, 8];
+    
+    // Convert to 1-9 tara system
+    const taraNumber = ((tara - 1) % 9) + 1;
+    
+    let score = 0;
+    if (goodTaras.includes(taraNumber)) {
+      score = 3; // Excellent
+    } else if (badTaras.includes(taraNumber)) {
+      score = 0; // Bad
+    } else {
+      score = 1; // Neutral (shouldn't happen in 9 tara, but safety)
+    }
+    
     return {
       name: 'Tara',
-      score: 3,
+      score,
       maxScore: 3,
-      description: 'Tara matching is good',
+      description: score === 3 
+        ? `Tara matching is excellent (Tara ${taraNumber})` 
+        : score === 0 
+        ? `Tara matching is unfavorable (Tara ${taraNumber})` 
+        : `Tara matching is neutral (Tara ${taraNumber})`,
     };
   }
 
   private calculateYoni(chart1: any, chart2: any): any {
+    const moon1 = chart1.planets?.find((p: any) => p.planet === 'Moon');
+    const moon2 = chart2.planets?.find((p: any) => p.planet === 'Moon');
+    const nakshatra1 = moon1?.nakshatra || '';
+    const nakshatra2 = moon2?.nakshatra || '';
+    
+    if (!nakshatra1 || !nakshatra2) {
+      return {
+        name: 'Yoni',
+        score: 0,
+        maxScore: 4,
+        description: 'Yoni calculation requires nakshatra data',
+      };
+    }
+    
+    // Yoni mapping (14 yoni animals based on nakshatras)
+    const yoniMap: Record<string, string> = {
+      'Ashwini': 'Horse', 'Bharani': 'Elephant', 'Krittika': 'Goat', 'Rohini': 'Serpent',
+      'Mrigashira': 'Serpent', 'Ardra': 'Dog', 'Punarvasu': 'Cat', 'Pushya': 'Goat',
+      'Ashlesha': 'Cat', 'Magha': 'Rat', 'Purva Phalguni': 'Rat', 'Uttara Phalguni': 'Cow',
+      'Hasta': 'Buffalo', 'Chitra': 'Tiger', 'Swati': 'Buffalo', 'Vishakha': 'Tiger',
+      'Anuradha': 'Deer', 'Jyeshta': 'Hare', 'Mula': 'Dog', 'Purva Ashadha': 'Monkey',
+      'Uttara Ashadha': 'Mongoose', 'Shravana': 'Monkey', 'Dhanishta': 'Lion', 'Shatabhisha': 'Horse',
+      'Purva Bhadrapada': 'Lion', 'Uttara Bhadrapada': 'Cow', 'Revati': 'Elephant',
+    };
+    
+    const yoni1 = yoniMap[nakshatra1] || '';
+    const yoni2 = yoniMap[nakshatra2] || '';
+    
+    if (!yoni1 || !yoni2) {
+      return {
+        name: 'Yoni',
+        score: 0,
+        maxScore: 4,
+        description: 'Invalid nakshatra data for Yoni',
+      };
+    }
+    
+    // Yoni compatibility scoring
+    let score = 0;
+    if (yoni1 === yoni2) {
+      score = 4; // Same yoni - excellent
+    } else {
+      // Check for compatible yoni pairs
+      const compatiblePairs: Record<string, string[]> = {
+        'Horse': ['Horse', 'Elephant'],
+        'Elephant': ['Elephant', 'Horse'],
+        'Goat': ['Goat', 'Serpent'],
+        'Serpent': ['Serpent', 'Goat'],
+        'Dog': ['Dog', 'Cat'],
+        'Cat': ['Cat', 'Dog'],
+        'Rat': ['Rat', 'Cow'],
+        'Cow': ['Cow', 'Rat'],
+        'Buffalo': ['Buffalo', 'Tiger'],
+        'Tiger': ['Tiger', 'Buffalo'],
+        'Deer': ['Deer', 'Hare'],
+        'Hare': ['Hare', 'Deer'],
+        'Monkey': ['Monkey', 'Mongoose'],
+        'Mongoose': ['Mongoose', 'Monkey'],
+        'Lion': ['Lion', 'Horse'],
+      };
+      
+      const compatible = compatiblePairs[yoni1]?.includes(yoni2) || false;
+      score = compatible ? 2 : 0; // Compatible: 2 points, incompatible: 0
+    }
+    
     return {
       name: 'Yoni',
-      score: 4,
+      score,
       maxScore: 4,
-      description: 'Yoni compatibility is favorable',
+      description: score === 4 
+        ? `Yoni matching is excellent (both ${yoni1})` 
+        : score === 2 
+        ? `Yoni matching is good (${yoni1} and ${yoni2} are compatible)` 
+        : `Yoni matching needs attention (${yoni1} and ${yoni2})`,
     };
   }
 
   private calculateGrahaMaitri(chart1: any, chart2: any): any {
+    const moon1 = chart1.moonSign?.sign || chart1.moonSign || '';
+    const moon2 = chart2.moonSign?.sign || chart2.moonSign || '';
+    
+    if (!moon1 || !moon2) {
+      return {
+        name: 'Graha Maitri',
+        score: 0,
+        maxScore: 5,
+        description: 'Graha Maitri calculation requires Moon sign data',
+      };
+    }
+    
+    // Planetary friendship groups (based on Moon signs)
+    // Friends: Same element signs
+    // Neutral: Compatible elements
+    // Enemies: Opposite elements
+    
+    const signGroups: Record<string, number> = {
+      'Aries': 1, 'Leo': 1, 'Sagittarius': 1,        // Fire
+      'Taurus': 2, 'Virgo': 2, 'Capricorn': 2,        // Earth
+      'Gemini': 3, 'Libra': 3, 'Aquarius': 3,        // Air
+      'Cancer': 4, 'Scorpio': 4, 'Pisces': 4,        // Water
+    };
+    
+    const group1 = signGroups[moon1] || 0;
+    const group2 = signGroups[moon2] || 0;
+    
+    let score = 0;
+    if (group1 === group2) {
+      score = 5; // Same element - best friends
+    } else if (
+      (group1 === 1 && group2 === 3) || (group1 === 3 && group2 === 1) || // Fire-Air (friends)
+      (group1 === 2 && group2 === 4) || (group1 === 4 && group2 === 2)    // Earth-Water (friends)
+    ) {
+      score = 4; // Compatible elements - good friends
+    } else if (
+      (group1 === 1 && group2 === 2) || (group1 === 2 && group2 === 1) || // Fire-Earth
+      (group1 === 3 && group2 === 4) || (group1 === 4 && group2 === 3)    // Air-Water
+    ) {
+      score = 2; // Neutral
+    } else {
+      score = 0; // Incompatible
+    }
+    
     return {
       name: 'Graha Maitri',
-      score: 5,
+      score,
       maxScore: 5,
-      description: 'Planetary friendship is good',
+      description: score >= 4 
+        ? 'Planetary friendship is excellent' 
+        : score === 2 
+        ? 'Planetary friendship is neutral' 
+        : 'Planetary friendship needs attention',
     };
   }
 
   private calculateGana(chart1: any, chart2: any): any {
+    const moon1 = chart1.planets?.find((p: any) => p.planet === 'Moon');
+    const moon2 = chart2.planets?.find((p: any) => p.planet === 'Moon');
+    const nakshatra1 = moon1?.nakshatra || '';
+    const nakshatra2 = moon2?.nakshatra || '';
+    
+    if (!nakshatra1 || !nakshatra2) {
+      return {
+        name: 'Gana',
+        score: 0,
+        maxScore: 6,
+        description: 'Gana calculation requires nakshatra data',
+      };
+    }
+    
+    // Gana mapping (Deva, Manushya, Rakshasa)
+    const ganaMap: Record<string, string> = {
+      'Ashwini': 'Deva', 'Bharani': 'Manushya', 'Krittika': 'Rakshasa', 'Rohini': 'Manushya',
+      'Mrigashira': 'Deva', 'Ardra': 'Manushya', 'Punarvasu': 'Deva', 'Pushya': 'Deva',
+      'Ashlesha': 'Rakshasa', 'Magha': 'Rakshasa', 'Purva Phalguni': 'Manushya', 'Uttara Phalguni': 'Manushya',
+      'Hasta': 'Deva', 'Chitra': 'Rakshasa', 'Swati': 'Rakshasa', 'Vishakha': 'Rakshasa',
+      'Anuradha': 'Deva', 'Jyeshta': 'Rakshasa', 'Mula': 'Rakshasa', 'Purva Ashadha': 'Manushya',
+      'Uttara Ashadha': 'Manushya', 'Shravana': 'Deva', 'Dhanishta': 'Rakshasa', 'Shatabhisha': 'Rakshasa',
+      'Purva Bhadrapada': 'Manushya', 'Uttara Bhadrapada': 'Manushya', 'Revati': 'Deva',
+    };
+    
+    const gana1 = ganaMap[nakshatra1] || '';
+    const gana2 = ganaMap[nakshatra2] || '';
+    
+    if (!gana1 || !gana2) {
+      return {
+        name: 'Gana',
+        score: 0,
+        maxScore: 6,
+        description: 'Invalid nakshatra data for Gana',
+      };
+    }
+    
+    let score = 0;
+    if (gana1 === gana2) {
+      score = 6; // Same gana - excellent
+    } else if (
+      (gana1 === 'Deva' && gana2 === 'Manushya') || (gana1 === 'Manushya' && gana2 === 'Deva')
+    ) {
+      score = 5; // Deva-Manushya - very good
+    } else if (
+      (gana1 === 'Manushya' && gana2 === 'Rakshasa') || (gana1 === 'Rakshasa' && gana2 === 'Manushya')
+    ) {
+      score = 3; // Manushya-Rakshasa - acceptable
+    } else if (
+      (gana1 === 'Deva' && gana2 === 'Rakshasa') || (gana1 === 'Rakshasa' && gana2 === 'Deva')
+    ) {
+      score = 0; // Deva-Rakshasa - incompatible
+    }
+    
     return {
       name: 'Gana',
-      score: 6,
+      score,
       maxScore: 6,
-      description: 'Gana matching is compatible',
+      description: score === 6 
+        ? `Gana matching is excellent (both ${gana1})` 
+        : score >= 5 
+        ? `Gana matching is very good (${gana1} and ${gana2})` 
+        : score >= 3 
+        ? `Gana matching is acceptable (${gana1} and ${gana2})` 
+        : `Gana matching is incompatible (${gana1} and ${gana2})`,
     };
   }
 
