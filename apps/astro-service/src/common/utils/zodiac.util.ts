@@ -1,17 +1,6 @@
-export enum ZodiacSign {
-  Aries = 'aries',
-  Taurus = 'taurus',
-  Gemini = 'gemini',
-  Cancer = 'cancer',
-  Leo = 'leo',
-  Virgo = 'virgo',
-  Libra = 'libra',
-  Scorpio = 'scorpio',
-  Sagittarius = 'sagittarius',
-  Capricorn = 'capricorn',
-  Aquarius = 'aquarius',
-  Pisces = 'pisces',
-}
+import { ZodiacSign } from '../constants/zodiac.constants';
+
+export { ZodiacSign } from '../constants/zodiac.constants';
 
 export function getZodiacSignFromDateOfBirth(dob: Date): ZodiacSign {
   const month = dob.getMonth() + 1;

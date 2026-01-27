@@ -5,10 +5,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  BENEFICIAL_PLANETS,
+  CHALLENGING_PLANETS,
+} from '../common/constants/astrology.constants';
+import { ChartType } from '../common/utils/coordinates.util';
 import { NatalChartService } from '../natal-chart/natal-chart.service';
 import { TransitsService } from '../transits/transits.service';
 import { KundliDto } from '../kundli/dto/kundli.dto';
-import { ChartType } from '../common/utils/coordinates.util';
 
 @Injectable()
 export class HoroscopeRuleService {
@@ -63,16 +67,13 @@ export class HoroscopeRuleService {
     const ascendant = natalChart.ascendant?.toLowerCase() || '';
 
     const majorTransits = transits.majorActiveTransits || [];
-    const beneficialPlanets = ['jupiter', 'venus', 'mercury'];
-    const challengingPlanets = ['saturn', 'mars', 'rahu', 'ketu'];
-
     let score = 0;
 
     majorTransits.forEach((transit: any) => {
       const planet = transit.planet?.toLowerCase() || '';
-      if (beneficialPlanets.includes(planet)) {
+      if ((BENEFICIAL_PLANETS as readonly string[]).includes(planet)) {
         score += 1;
-      } else if (challengingPlanets.includes(planet)) {
+      } else if ((CHALLENGING_PLANETS as readonly string[]).includes(planet)) {
         score -= 1;
       }
     });
