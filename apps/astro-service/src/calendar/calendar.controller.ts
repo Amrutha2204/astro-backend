@@ -1,9 +1,10 @@
 import {
   Controller,
   Get,
+  Query,
   HttpCode,
   HttpStatus,
-  Request,
+  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import {
@@ -11,17 +12,40 @@ import {
   ApiOperation,
   ApiTags,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CalendarService } from './calendar.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/astrology')
 @ApiTags('Astrology')
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
 
+  @Get('calendar/today/guest')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get today’s astrology calendar (moon, tithi, nakshatra) by city – no login',
+  })
+  @ApiQuery({
+    name: 'placeOfBirth',
+    required: false,
+    description: 'City name for location; defaults to Delhi if omitted',
+  })
+  @ApiOkResponse({ description: 'Calendar retrieved successfully' })
+  async getTodayCalendarGuest(
+    @Query('placeOfBirth') placeOfBirth?: string,
+  ) {
+    const city = (placeOfBirth || 'Delhi').trim();
+    const { lat, lng } = await getCoordinatesFromCity(city);
+    return this.calendarService.getTodayCalendar(lat, lng);
+  }
+
   @Get('calendar/today')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get astrology calendar for today - Moon phase and major planetary events',
@@ -35,20 +59,12 @@ export class CalendarController {
         nakshatra: 'Magha',
         majorPlanetaryEvents: ['Auspicious periods available'],
         date: '2024-01-15',
-        source: 'Prokerala API',
+        source: 'Swiss Ephemeris',
       },
     },
   })
-  async getTodayCalendar(@Request() req: any) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    const token = authHeader.substring(7);
+  async getTodayCalendar(@CurrentUser() user: any) {
+    const token = user.token;
     const authServiceUrl =
       process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
@@ -92,7 +108,7 @@ export class CalendarController {
         );
       }
 
-      const coordinates = getCoordinatesFromCity(userDetails.birthPlace);
+      const coordinates = await getCoordinatesFromCity(userDetails.birthPlace);
 
       return this.calendarService.getTodayCalendar(
         coordinates.lat,

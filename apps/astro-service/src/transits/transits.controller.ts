@@ -29,7 +29,7 @@ export class TransitsController {
           { planet: 'Moon', sign: 'Vrischika' },
         ],
         date: '2026-01-14',
-        source: 'Prokerala API',
+        source: 'Swiss Ephemeris',
       },
     },
   })

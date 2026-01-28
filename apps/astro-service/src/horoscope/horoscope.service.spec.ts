@@ -1,21 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { HttpException, NotFoundException } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { HoroscopeService } from './horoscope.service';
-import { ZodiacSign } from '../common/utils/zodiac.util';
+import { HoroscopeRuleService } from '../horoscope-rule/horoscope-rule.service';
+import * as coordinatesUtil from '../common/utils/coordinates.util';
+
+jest.mock('../common/utils/coordinates.util', () => ({
+  getCoordinatesFromCity: jest.fn().mockResolvedValue({ lat: 28.6139, lng: 77.209 }),
+}));
 
 describe('HoroscopeService', () => {
   let service: HoroscopeService;
-  let configService: ConfigService;
+  let horoscopeRuleService: HoroscopeRuleService;
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
       const config: Record<string, string> = {
         AUTH_SERVICE_URL: 'http://localhost:8001',
-        PROKERALA_CLIENT_ID: 'test-client-id',
-        PROKERALA_CLIENT_SECRET: 'test-client-secret',
       };
-      return config[key] || null;
+      return config[key] ?? null;
+    }),
+  };
+
+  const mockHoroscopeRuleService = {
+    getTodayHoroscope: jest.fn().mockResolvedValue({
+      dayType: 'Good',
+      mainTheme: 'Focus on opportunities',
+      reason: 'Test reason',
     }),
   };
 
@@ -23,15 +34,20 @@ describe('HoroscopeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HoroscopeService,
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: HoroscopeRuleService, useValue: mockHoroscopeRuleService },
       ],
     }).compile();
 
     service = module.get<HoroscopeService>(HoroscopeService);
-    configService = module.get<ConfigService>(ConfigService);
+    horoscopeRuleService = module.get<HoroscopeRuleService>(HoroscopeRuleService);
+    jest.clearAllMocks();
+    (coordinatesUtil.getCoordinatesFromCity as jest.Mock).mockResolvedValue({ lat: 28.6139, lng: 77.209 });
+    mockHoroscopeRuleService.getTodayHoroscope.mockResolvedValue({
+      dayType: 'Good',
+      mainTheme: 'Focus on opportunities',
+      reason: 'Test reason',
+    });
   });
 
   afterEach(() => {
@@ -39,38 +55,22 @@ describe('HoroscopeService', () => {
     global.fetch = jest.fn();
   });
 
-  describe('getMyDayToday', () => {
+  describe('getWeeklyHoroscope', () => {
     const mockToken = 'test-token';
     const mockUserDetails = {
       id: 'user-details-id',
       dob: '1990-01-15',
-      birthPlace: 'New York',
+      birthPlace: 'Delhi',
       birthTime: '10:30:00',
     };
 
-    const mockHoroscopeResponse = {
-      sign: ZodiacSign.Capricorn,
-      date: '2024-01-15',
-      horoscope: {
-        daily_prediction: {
-          sign_name: 'Capricorn',
-          prediction: 'Test prediction',
-        },
-      },
-      source: 'Prokerala API',
-    };
-
-    it('should fetch user details and return personalized horoscope', async () => {
+    it('should fetch user details and return weekly horoscope', async () => {
       global.fetch = jest.fn().mockResolvedValueOnce({
         ok: true,
         json: async () => mockUserDetails,
       });
 
-      jest.spyOn(service, 'getDailyHoroscope' as any).mockResolvedValue(
-        mockHoroscopeResponse,
-      );
-
-      const result = await service.getMyDayToday(mockToken);
+      const result = await service.getWeeklyHoroscope(mockToken);
 
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:8001/api/v1/user-details/me',
@@ -82,131 +82,72 @@ describe('HoroscopeService', () => {
           },
         },
       );
-
-      expect(result).toEqual(mockHoroscopeResponse);
+      expect(result.source).toBe('Swiss Ephemeris');
+      expect(result.predictions).toHaveLength(7);
+      expect(result.weekStart).toBeDefined();
     });
 
-    it('should throw HttpException when token is invalid', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
+    it('should throw HttpException when user details request fails', async () => {
+      global.fetch = jest.fn().mockResolvedValueOnce({ ok: false, status: 401 });
 
-      await expect(service.getMyDayToday(mockToken)).rejects.toThrow(
-        HttpException,
-      );
+      await expect(service.getWeeklyHoroscope(mockToken)).rejects.toThrow(HttpException);
     });
 
-    it('should throw NotFoundException when birth details not found', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-      });
-
-      await expect(service.getMyDayToday(mockToken)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should throw NotFoundException when dob is missing', async () => {
+    it('should throw HttpException when dob is missing', async () => {
       global.fetch = jest.fn().mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          id: 'user-details-id',
-          birthPlace: 'New York',
-        }),
+        json: async () => ({ id: 'id', birthPlace: 'Delhi' }),
       });
 
-      await expect(service.getMyDayToday(mockToken)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getWeeklyHoroscope(mockToken)).rejects.toThrow(HttpException);
     });
 
-    it('should use date parameter when provided', async () => {
+    it('should throw HttpException when birthPlace is missing', async () => {
+      global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'id', dob: '1990-01-15' }),
+      });
+
+      await expect(service.getWeeklyHoroscope(mockToken)).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('getMonthlyHoroscope', () => {
+    const mockToken = 'test-token';
+    const mockUserDetails = {
+      id: 'user-details-id',
+      dob: '1990-01-15',
+      birthPlace: 'Delhi',
+      birthTime: '10:30:00',
+    };
+
+    it('should fetch user details and return monthly horoscope', async () => {
       global.fetch = jest.fn().mockResolvedValueOnce({
         ok: true,
         json: async () => mockUserDetails,
       });
 
-      jest.spyOn(service, 'getDailyHoroscope' as any).mockResolvedValue(
-        mockHoroscopeResponse,
-      );
-
-      await service.getMyDayToday(mockToken, '2024-01-20');
-
-      expect(service.getDailyHoroscope).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sign: ZodiacSign.Capricorn,
-          date: '2024-01-20',
-        }),
-      );
-    });
-  });
-
-  describe('getDailyHoroscope', () => {
-    const mockAccessToken = 'prokerala-access-token';
-    const mockProkeralaResponse = {
-      data: {
-        daily_prediction: {
-          sign_name: 'Aries',
-          prediction: 'Test prediction',
-        },
-      },
-    };
-
-    beforeEach(() => {
-      jest.spyOn(service as any, 'getAccessToken').mockResolvedValue(
-        mockAccessToken,
-      );
-    });
-
-    it('should fetch horoscope from Prokerala API', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockProkeralaResponse,
-      });
-
-      const result = await service.getDailyHoroscope({
-        sign: ZodiacSign.Aries,
-      });
+      const result = await service.getMonthlyHoroscope(mockToken);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('sign=aries'),
+        'http://localhost:8001/api/v1/user-details/me',
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${mockAccessToken}`,
+            Authorization: `Bearer ${mockToken}`,
             Accept: 'application/json',
           },
         },
       );
-
-      expect(result.sign).toBe(ZodiacSign.Aries);
-      expect(result.horoscope).toBeDefined();
+      expect(result.source).toBe('Swiss Ephemeris');
+      expect(result.predictions).toHaveLength(30);
+      expect(result.monthStart).toBeDefined();
     });
 
-    it('should handle rate limit error', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        json: async () => ({ message: 'Rate limit exceeded' }),
-      });
+    it('should throw HttpException when user details request fails', async () => {
+      global.fetch = jest.fn().mockResolvedValueOnce({ ok: false, status: 404 });
 
-      await expect(
-        service.getDailyHoroscope({ sign: ZodiacSign.Aries }),
-      ).rejects.toThrow(HttpException);
-    });
-
-    it('should handle authentication error', async () => {
-      global.fetch = jest.fn().mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: async () => ({ message: 'Unauthorized' }),
-      });
-
-      await expect(
-        service.getDailyHoroscope({ sign: ZodiacSign.Aries }),
-      ).rejects.toThrow(HttpException);
+      await expect(service.getMonthlyHoroscope(mockToken)).rejects.toThrow(HttpException);
     });
   });
 });

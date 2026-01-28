@@ -4,8 +4,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Request,
-  HttpException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -15,51 +14,40 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { HoroscopeService } from './horoscope.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/v1/horoscope')
 @ApiTags('Horoscope')
 export class HoroscopeController {
   constructor(private readonly horoscopeService: HoroscopeService) {}
 
-  @Get('my-day-today')
+  @Get('weekly')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Get personalized daily horoscope based on user's birth details",
-  })
-  @ApiQuery({
-    name: 'date',
-    required: false,
-    description: 'Date for horoscope (YYYY-MM-DD). Defaults to today',
-    example: '2024-01-15',
+    summary: 'Get personalized weekly horoscope (next 7 days)',
   })
   @ApiOkResponse({
-    description: 'Personalized daily horoscope retrieved successfully',
-    schema: {
-      example: {
-        sign: 'aries',
-        date: '2024-01-15',
-        horoscope: {
-          daily_prediction: {
-            sign_name: 'Aries',
-            prediction: 'Your personalized horoscope...',
-          },
-        },
-        source: 'Prokerala API',
-      },
-    },
+    description: 'Weekly horoscope retrieved successfully',
   })
-  async getMyDayToday(@Request() req: any, @Query('date') date?: string) {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new HttpException(
-        'Authentication required. Please provide a valid JWT token.',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
+  async getWeeklyHoroscope(@CurrentUser() user: any) {
+    return this.horoscopeService.getWeeklyHoroscope(user.token);
+  }
 
-    const token = authHeader.substring(7);
-    return this.horoscopeService.getMyDayToday(token, date);
+  @Get('monthly')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get personalized monthly horoscope (next 30 days)',
+  })
+  @ApiOkResponse({
+    description: 'Monthly horoscope retrieved successfully',
+  })
+  async getMonthlyHoroscope(@CurrentUser() user: any) {
+    return this.horoscopeService.getMonthlyHoroscope(user.token);
   }
 }
 

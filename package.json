@@ -12,6 +12,7 @@
   },
   "private": true,
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.0",
@@ -32,6 +33,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "swagger-ui-express": "^5.0.1",
+    "swisseph-v2": "^1.0.4",
     "typeorm": "^0.3.20",
     "winston": "^3.19.0"
   },
