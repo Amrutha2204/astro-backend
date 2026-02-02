@@ -43,6 +43,80 @@ export class CalendarController {
     return this.calendarService.getTodayCalendar(lat, lng);
   }
 
+  @Get('calendar/festivals')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'List festivals for a date (YYYY-MM-DD) or month (YYYY-MM)',
+  })
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    description: 'Date (YYYY-MM-DD) or month (YYYY-MM)',
+    example: '2024-11-01',
+  })
+  @ApiOkResponse({ description: 'Festivals list' })
+  async getFestivals(@Query('date') date: string) {
+    const d = (date || '').trim();
+    if (!d) {
+      throw new HttpException(
+        'Query "date" is required (e.g. YYYY-MM-DD or YYYY-MM).',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.calendarService.getFestivals(d);
+  }
+
+  @Get('calendar/muhurat')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get muhurat (good times) for a given day at a location',
+  })
+  @ApiQuery({ name: 'date', required: true, description: 'Date YYYY-MM-DD', example: '2024-02-15' })
+  @ApiQuery({ name: 'placeOfBirth', required: false, description: 'City for location; defaults to Delhi' })
+  @ApiOkResponse({ description: 'Muhurat and sun times (UTC)' })
+  async getMuhurat(
+    @Query('date') date: string,
+    @Query('placeOfBirth') placeOfBirth?: string,
+  ) {
+    const city = (placeOfBirth || 'Delhi').trim();
+    const { lat, lng } = await getCoordinatesFromCity(city);
+    return this.calendarService.getMuhurat(date, lat, lng);
+  }
+
+  @Get('calendar/auspicious-day')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Check if a date is auspicious for important work',
+  })
+  @ApiQuery({ name: 'date', required: true, description: 'Date YYYY-MM-DD', example: '2024-02-15' })
+  @ApiQuery({ name: 'placeOfBirth', required: false, description: 'City for location; defaults to Delhi' })
+  @ApiOkResponse({ description: 'Auspicious day check result' })
+  async getAuspiciousDay(
+    @Query('date') date: string,
+    @Query('placeOfBirth') placeOfBirth?: string,
+  ) {
+    const city = (placeOfBirth || 'Delhi').trim();
+    const { lat, lng } = await getCoordinatesFromCity(city);
+    return this.calendarService.getAuspiciousDayCheck(date, lat, lng);
+  }
+
+  @Get('calendar/date')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get astrology calendar for a specific date (moon, tithi, nakshatra, auspicious)',
+  })
+  @ApiQuery({ name: 'date', required: true, description: 'Date YYYY-MM-DD' })
+  @ApiQuery({ name: 'placeOfBirth', required: false, description: 'City for location' })
+  @ApiOkResponse({ description: 'Calendar for the given date' })
+  async getCalendarForDate(
+    @Query('date') date: string,
+    @Query('placeOfBirth') placeOfBirth?: string,
+  ) {
+    const city = (placeOfBirth || 'Delhi').trim();
+    const { lat, lng } = await getCoordinatesFromCity(city);
+    return this.calendarService.getCalendarForDate(date, lat, lng);
+  }
+
   @Get('calendar/today')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)

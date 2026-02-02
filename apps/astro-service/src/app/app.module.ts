@@ -17,6 +17,7 @@ import { DoshaModule } from '../dosha/dosha.module';
 import { CompatibilityModule } from '../compatibility/compatibility.module';
 import { RemediesModule } from '../remedies/remedies.module';
 import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
+import { ShareableCardModule } from '../shareable-card/shareable-card.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
     CompatibilityModule,
     RemediesModule,
     AiAssistantModule,
+    ShareableCardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

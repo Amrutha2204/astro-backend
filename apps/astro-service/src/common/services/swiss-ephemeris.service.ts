@@ -268,5 +268,242 @@ export class SwissEphemerisService {
       return tropicalLongitude;
     }
   }
+
+  /**
+   * Get Sun rise, set, and meridian transit (solar noon) for a given date and location.
+   * Times are returned in UTC as HH:mm strings.
+   */
+  getSunRiseSetTransit(
+    year: number,
+    month: number,
+    day: number,
+    longitude: number,
+    latitude: number,
+    heightMeters: number = 0,
+  ): {
+    sunrise: string;
+    sunset: string;
+    transit: string;
+    sunriseJd?: number;
+    sunsetJd?: number;
+    transitJd?: number;
+  } | { error: string } {
+    try {
+      const jdStart = this.dateToJulianDay(year, month, day, 0, 0, 0);
+      const atpress = 1013.25;
+      const attemp = 15;
+
+      const riseResult = swisseph.swe_rise_trans(
+        jdStart,
+        swisseph.SE_SUN,
+        '',
+        swisseph.SEFLG_SWIEPH,
+        swisseph.SE_CALC_RISE,
+        longitude,
+        latitude,
+        heightMeters,
+        atpress,
+        attemp,
+      );
+      const setResult = swisseph.swe_rise_trans(
+        jdStart,
+        swisseph.SE_SUN,
+        '',
+        swisseph.SEFLG_SWIEPH,
+        swisseph.SE_CALC_SET,
+        longitude,
+        latitude,
+        heightMeters,
+        atpress,
+        attemp,
+      );
+      const transitResult = swisseph.swe_rise_trans(
+        jdStart,
+        swisseph.SE_SUN,
+        '',
+        swisseph.SEFLG_SWIEPH,
+        swisseph.SE_CALC_MTRANSIT,
+        longitude,
+        latitude,
+        heightMeters,
+        atpress,
+        attemp,
+      );
+
+      if ('error' in riseResult || 'error' in setResult || 'error' in transitResult) {
+        return {
+          error:
+            ('error' in riseResult && riseResult.error) ||
+            ('error' in setResult && setResult.error) ||
+            ('error' in transitResult && transitResult.error) ||
+            'Unknown error',
+        };
+      }
+
+      const jdToTime = (jd: number): string => {
+        const utc = swisseph.swe_jdut1_to_utc(jd, swisseph.SE_GREG_CAL);
+        const h = Math.floor(utc.hour);
+        const m = Math.floor(utc.minute);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
+
+      return {
+        sunrise: jdToTime(riseResult.transitTime),
+        sunset: jdToTime(setResult.transitTime),
+        transit: jdToTime(transitResult.transitTime),
+        sunriseJd: riseResult.transitTime,
+        sunsetJd: setResult.transitTime,
+        transitJd: transitResult.transitTime,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error getting sun rise/set: ${error.message}`,
+        error.stack,
+      );
+      return { error: String(error.message) };
+    }
+  }
+
+  /** Parse YYYY-MM-DD and return Julian day (UT) at noon. */
+  dateStringToJulianDay(dateStr: string): number {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return this.dateToJulianDay(y, m, d, 12, 0, 0);
+  }
+
+  /** Convert Julian day (UT) to UTC date string YYYY-MM-DD. */
+  jdToUtcDateString(jd: number): string {
+    const utc = swisseph.swe_jdut1_to_utc(jd, swisseph.SE_GREG_CAL);
+    const d = Math.floor(utc.day);
+    const m = Math.floor(utc.month);
+    const y = Math.floor(utc.year);
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+
+  /** Convert Julian day (UT) to full UTC ISO-like string. */
+  jdToUtcIso(jd: number): string {
+    const utc = swisseph.swe_jdut1_to_utc(jd, swisseph.SE_GREG_CAL);
+    const y = Math.floor(utc.year);
+    const m = Math.floor(utc.month);
+    const d = Math.floor(utc.day);
+    const h = Math.floor(utc.hour);
+    const min = Math.floor(utc.minute);
+    const sec = Math.floor(utc.second);
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}Z`;
+  }
+
+  /**
+   * Get next N solar eclipses from a start date (global).
+   */
+  getNextSolarEclipses(
+    startJd: number,
+    limit: number,
+  ): Array<{
+    date: string;
+    maximum: string;
+    type: string;
+  }> {
+    const results: Array<{
+      date: string;
+      maximum: string;
+      type: string;
+    }> = [];
+    let jd = startJd;
+    const ifl = swisseph.SEFLG_SWIEPH;
+    const ifltype = swisseph.SE_ECL_ALLTYPES_SOLAR;
+
+    for (let i = 0; i < limit; i++) {
+      try {
+        const r = swisseph.swe_sol_eclipse_when_glob(
+          jd,
+          ifl,
+          ifltype,
+          0 as 0,
+        );
+        if ('error' in r) break;
+        const dateStr = this.jdToUtcDateString(r.maximum);
+        const maxIso = this.jdToUtcIso(r.maximum);
+        let type = 'Partial';
+        if (r.rflag & swisseph.SE_ECL_TOTAL) type = 'Total';
+        else if (r.rflag & swisseph.SE_ECL_ANNULAR) type = 'Annular';
+        else if (r.rflag & swisseph.SE_ECL_ANNULAR_TOTAL) type = 'Hybrid';
+        results.push({
+          date: dateStr,
+          maximum: maxIso,
+          type,
+        });
+        jd = r.maximum + 1;
+      } catch {
+        break;
+      }
+    }
+    return results;
+  }
+
+  /**
+   * Get next N lunar eclipses from a start date (global).
+   */
+  getNextLunarEclipses(
+    startJd: number,
+    limit: number,
+  ): Array<{
+    date: string;
+    maximum: string;
+    type: string;
+    umbralMagnitude?: number;
+    penumbralMagnitude?: number;
+    sarosNumber?: number;
+    sarosMember?: number;
+  }> {
+    const results: Array<{
+      date: string;
+      maximum: string;
+      type: string;
+      umbralMagnitude?: number;
+      penumbralMagnitude?: number;
+      sarosNumber?: number;
+      sarosMember?: number;
+    }> = [];
+    let jd = startJd;
+    const ifl = swisseph.SEFLG_SWIEPH;
+    const ifltype = swisseph.SE_ECL_ALLTYPES_LUNAR;
+
+    for (let i = 0; i < limit; i++) {
+      try {
+        const r = swisseph.swe_lun_eclipse_when(jd, ifl, ifltype, 0 as 0);
+        if ('error' in r) break;
+        const dateStr = this.jdToUtcDateString(r.maximum);
+        const maxIso = this.jdToUtcIso(r.maximum);
+        let type = 'Penumbral';
+        if (r.rflag & swisseph.SE_ECL_TOTAL) type = 'Total';
+        else if (r.rflag & swisseph.SE_ECL_PARTIAL) type = 'Partial';
+        const how = swisseph.swe_lun_eclipse_how(
+          r.maximum,
+          ifl,
+          0,
+          0,
+          0,
+        );
+        const umbralMagnitude =
+          how && !('error' in how) ? how.umbralMagnitude : undefined;
+        const penumbralMagnitude =
+          how && !('error' in how) ? how.penumbralMagnitude : undefined;
+        const sarosNumber = how && !('error' in how) ? how.sarosNumber : undefined;
+        const sarosMember = how && !('error' in how) ? how.sarosMember : undefined;
+        results.push({
+          date: dateStr,
+          maximum: maxIso,
+          type,
+          umbralMagnitude,
+          penumbralMagnitude,
+          sarosNumber,
+          sarosMember,
+        });
+        jd = r.maximum + 1;
+      } catch {
+        break;
+      }
+    }
+    return results;
+  }
 }
 
