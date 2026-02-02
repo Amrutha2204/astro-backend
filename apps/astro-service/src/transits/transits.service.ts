@@ -150,7 +150,7 @@ export class TransitsService {
         if (isRetro && !inRetrograde) {
           inRetrograde = true;
           startDate = dateStr;
-        } else         if (!isRetro && inRetrograde && startDate) {
+        } else if (!isRetro && inRetrograde && startDate) {
           const prevDate = new Date(date);
           prevDate.setDate(prevDate.getDate() - 1);
           const endDate = this.formatDate(
@@ -206,8 +206,6 @@ export class TransitsService {
       date: string;
       maximum: string;
       type: string;
-      sarosNumber?: number;
-      sarosMember?: number;
     }>;
     lunar: Array<{
       date: string;

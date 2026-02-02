@@ -85,8 +85,14 @@ export class TransitsController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const lat = latitude ? Number(latitude) : 28.6139;
-    const lng = longitude ? Number(longitude) : 77.209;
+    const lat = latitude != null && latitude !== '' ? Number(latitude) : 28.6139;
+    const lng = longitude != null && longitude !== '' ? Number(longitude) : 77.209;
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      throw new HttpException(
+        'latitude and longitude must be valid numbers.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     return this.transitsService.getRetrogrades(
       fromDate.trim(),
       toDate.trim(),
@@ -166,8 +172,14 @@ export class TransitsController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const lat = latitude ? Number(latitude) : 28.6139;
-    const lng = longitude ? Number(longitude) : 77.209;
+    const lat = latitude != null && latitude !== '' ? Number(latitude) : 28.6139;
+    const lng = longitude != null && longitude !== '' ? Number(longitude) : 77.209;
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      throw new HttpException(
+        'latitude and longitude must be valid numbers.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     return this.transitsService.getMajorTransits(
       fromDate.trim(),
       toDate.trim(),

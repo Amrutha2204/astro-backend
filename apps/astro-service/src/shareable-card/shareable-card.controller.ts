@@ -45,7 +45,10 @@ export class ShareableCardController {
     @Param('filename') filename: string,
     @Res() res: Response,
   ): Promise<void> {
-    const safeName = filename.replace(/[^a-zA-Z0-9_.-]/g, '');
+    const safeName = (filename || '').replace(/[^a-zA-Z0-9_.-]/g, '');
+    if (!safeName || safeName.length === 0) {
+      throw new NotFoundException('File not found');
+    }
     const buffer = this.shareableCardService.readFile(safeName);
     if (!buffer) {
       throw new NotFoundException('File not found');
