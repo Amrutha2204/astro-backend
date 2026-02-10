@@ -54,6 +54,7 @@ export class AuthController {
           id: 'uuid',
           name: 'John Doe',
           roleId: 1,
+          birthPlace: 'Hyderabad',
         },
       },
     },
