@@ -79,6 +79,58 @@ export class TransitsService {
   }
 
   /**
+   * Get transits for a specific date (noon UTC). Same shape as getTodayTransits.
+   */
+  async getTransitsForDate(
+    dateStr: string,
+    latitude: number = 28.6139,
+    longitude: number = 77.209,
+  ) {
+    const date = this.parseDate(dateStr);
+    if (!date) {
+      throw new HttpException(
+        'Invalid date. Use YYYY-MM-DD.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    const planets = await this.swissEphemerisService.calculatePlanetaryPositions(
+      year,
+      month,
+      day,
+      12,
+      0,
+      latitude,
+      longitude,
+    );
+
+    const currentPlanetPositions: Record<string, any> = {};
+    const majorActiveTransits: Array<{ planet: string; sign: string }> = [];
+
+    planets.forEach((planet) => {
+      currentPlanetPositions[planet.planet.toLowerCase()] = {
+        name: planet.planet,
+        sign: { name: planet.sign },
+        degree: planet.signDegree,
+      };
+      majorActiveTransits.push({
+        planet: planet.planet,
+        sign: planet.sign,
+      });
+    });
+
+    return {
+      currentPlanetPositions,
+      majorActiveTransits,
+      date: dateStr,
+      source: 'Swiss Ephemeris',
+    };
+  }
+
+  /**
    * Get retrograde periods: when planets (Mercury, Venus, Mars, Jupiter, Saturn) are retrograde and for how long.
    */
   async getRetrogrades(
@@ -281,6 +333,26 @@ export class TransitsService {
       description: string;
     }> = [];
     let prevSigns: Record<string, string> = {};
+
+    // Seed prevSigns from the day before fromDate so we detect sign changes on the first day
+    const dayBefore = new Date(from);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+    const py = dayBefore.getFullYear();
+    const pm = dayBefore.getMonth() + 1;
+    const pday = dayBefore.getDate();
+    const prevPositions = await this.swissEphemerisService.calculatePlanetaryPositions(
+      py,
+      pm,
+      pday,
+      12,
+      0,
+      latitude,
+      longitude,
+    );
+    for (const planetName of MAJOR_TRANSIT_PLANETS) {
+      const planet = prevPositions.find((p) => p.planet === planetName);
+      if (planet) prevSigns[planetName] = planet.sign;
+    }
 
     for (let d = 0; d <= daysDiff; d++) {
       const date = new Date(from);

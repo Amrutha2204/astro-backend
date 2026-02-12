@@ -66,6 +66,8 @@ export class HoroscopeRuleController {
         dayType: 'Good',
         mainTheme: 'Focus on opportunities and growth',
         reason: "Today's planetary positions influence your Moon sign",
+        doAvoid: 'Do: Take important decisions, start new work. Avoid: Overcommitting.',
+        goodTime: 'Good time: Morning and late afternoon for key tasks.',
         date: '2024-01-15',
         source: 'Rule-Based Logic',
       },

@@ -25,21 +25,31 @@ export class HoroscopeRuleService {
   ) {}
 
   async getTodayHoroscope(dto: KundliDto) {
+    return this.getHoroscopeForDate(dto, new Date().toISOString().split('T')[0]);
+  }
+
+  /** Get horoscope for a specific date (used for weekly so each day can differ). */
+  async getHoroscopeForDate(dto: KundliDto, dateStr: string) {
     try {
+      const lat = dto.latitude ?? 28.6139;
+      const lng = dto.longitude ?? 77.209;
       const [natalChart, transits] = await Promise.all([
         this.natalChartService.getNatalChart(dto),
-        this.transitsService.getTodayTransits(),
+        this.transitsService.getTransitsForDate(dateStr, lat, lng),
       ]);
 
       const dayType = this.calculateDayType(natalChart, transits);
       const mainTheme = this.getMainTheme(dayType, natalChart, transits);
-      const reason = this.getReason(natalChart, transits);
+      const reason = this.getReason(natalChart, transits, dateStr);
+      const { doAvoid, goodTime } = this.getDoAvoidAndGoodTime(dayType);
 
       return {
         dayType,
         mainTheme,
         reason,
-        date: new Date().toISOString().split('T')[0],
+        doAvoid,
+        goodTime,
+        date: dateStr,
         source: 'Rule-Based Logic',
       };
     } catch (error) {
@@ -99,7 +109,7 @@ export class HoroscopeRuleService {
     return 'Reflection and balance';
   }
 
-  private getReason(natalChart: any, transits: any): string {
+  private getReason(natalChart: any, transits: any, dateStr?: string): string {
     const majorTransits = transits.majorActiveTransits || [];
     const transitPlanets = majorTransits
       .map((t: any) => t.planet)
@@ -109,7 +119,31 @@ export class HoroscopeRuleService {
       ? `${natalChart.ascendant} Ascendant`
       : 'your birth chart';
 
-    return `Today's planetary positions (${transitPlanets || 'current transits'}) influence your ${natalChart.moonSign} Moon sign and ${ascendantText}`;
+    const dayLabel = dateStr ? `Planetary positions for ${dateStr}` : "Today's planetary positions";
+    return `${dayLabel} (${transitPlanets || 'current transits'}) influence your ${natalChart.moonSign} Moon sign and ${ascendantText}`;
+  }
+
+  /** Do / Avoid and Good time — directive lines for India MVP. */
+  private getDoAvoidAndGoodTime(dayType: string): {
+    doAvoid: string;
+    goodTime: string;
+  } {
+    if (dayType === 'Good') {
+      return {
+        doAvoid: 'Do: Take important decisions, start new work, network. Avoid: Overcommitting.',
+        goodTime: 'Good time: Morning and late afternoon for key tasks.',
+      };
+    }
+    if (dayType === 'Challenging') {
+      return {
+        doAvoid: 'Do: Rest, reflect, finish pending tasks. Avoid: Big commitments, arguments.',
+        goodTime: 'Not recommended: Postpone major decisions if possible.',
+      };
+    }
+    return {
+      doAvoid: 'Do: Steady progress, routine work. Avoid: Rush or forcing outcomes.',
+      goodTime: 'Neutral day: Midday generally favourable for routine matters.',
+    };
   }
 }
 

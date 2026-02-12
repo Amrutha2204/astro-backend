@@ -51,10 +51,10 @@ export class KundliController {
   })
   async getGuestKundli(@Body() dto: GuestKundliRequestDto) {
     try {
+      const useUnknownTime = dto.unknownTime === true || !dto.birthTime?.trim();
+      const rawTime = useUnknownTime ? '12:00:00' : dto.birthTime!.trim();
       const birthTime =
-        dto.birthTime.split(':').length === 2
-          ? `${dto.birthTime}:00`
-          : dto.birthTime;
+        rawTime.split(':').length === 2 ? `${rawTime}:00` : rawTime;
       const coordinates = await getCoordinatesFromCity(dto.placeOfBirth);
 
       const kundliDto: KundliDto = {
@@ -92,6 +92,12 @@ export class KundliController {
     description: 'Chart type (north-indian, south-indian, east-indian)',
     example: ChartType.NorthIndian,
   })
+  @ApiQuery({
+    name: 'system',
+    required: false,
+    enum: ['vedic', 'western'],
+    description: 'Astrology system: vedic (sidereal) or western (tropical). Default vedic.',
+  })
   @ApiOkResponse({
     description: 'Kundli retrieved successfully',
     schema: {
@@ -108,6 +114,7 @@ export class KundliController {
   async getMyKundli(
     @CurrentUser() user: any,
     @Query('chartType') chartType?: ChartType,
+    @Query('system') system?: 'vedic' | 'western',
   ) {
     const token = user.token;
     const authServiceUrl =
@@ -166,6 +173,9 @@ export class KundliController {
         chartType: chartType || ChartType.NorthIndian,
       };
 
+      if (system === 'western') {
+        return this.kundliService.getWesternKundli(kundliDto);
+      }
       return this.kundliService.getKundli(kundliDto);
     } catch (error) {
       if (error instanceof HttpException) {

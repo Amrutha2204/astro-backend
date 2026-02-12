@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
 import { LoggerModule } from '@astro/logger';
 import { AppController } from './app.controller';
@@ -18,6 +19,11 @@ import { CompatibilityModule } from '../compatibility/compatibility.module';
 import { RemediesModule } from '../remedies/remedies.module';
 import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
 import { ShareableCardModule } from '../shareable-card/shareable-card.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { PaymentModule } from '../payment/payment.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
+import { PremiumReportsModule } from '../premium-reports/premium-reports.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
@@ -26,6 +32,7 @@ import { ShareableCardModule } from '../shareable-card/shareable-card.module';
       envFilePath: [join(process.cwd(), 'apps/astro-service/.env')],
     }),
     LoggerModule.forRoot('astro-service'),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -52,6 +59,11 @@ import { ShareableCardModule } from '../shareable-card/shareable-card.module';
     RemediesModule,
     AiAssistantModule,
     ShareableCardModule,
+    NotificationsModule,
+    PaymentModule,
+    SubscriptionModule,
+    PremiumReportsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

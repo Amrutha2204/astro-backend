@@ -42,6 +42,7 @@ export class JwtAuthGuard implements CanActivate {
     request.user = {
       userId: validation.userId,
       token: token,
+      roleId: validation.roleId,
     };
 
     return true;
@@ -50,6 +51,7 @@ export class JwtAuthGuard implements CanActivate {
   private validateToken(token: string): {
     valid: boolean;
     userId?: string;
+    roleId?: number;
     expired?: boolean;
     error?: string;
   } {
@@ -71,6 +73,8 @@ export class JwtAuthGuard implements CanActivate {
         return { valid: false, error: 'Token does not contain user ID' };
       }
 
+      const roleId = decoded.roleId != null ? Number(decoded.roleId) : undefined;
+
       const exp = decoded.exp;
       if (exp) {
         const expirationTime = exp * 1000;
@@ -84,7 +88,7 @@ export class JwtAuthGuard implements CanActivate {
         }
       }
 
-      return { valid: true, userId };
+      return { valid: true, userId, roleId };
     } catch (error: any) {
       this.logger.warn(`Token validation error: ${error.message}`);
       return { valid: false, error: 'Invalid token format' };

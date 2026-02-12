@@ -100,6 +100,23 @@ export class CalendarController {
     return this.calendarService.getAuspiciousDayCheck(date, lat, lng);
   }
 
+  @Get('calendar/rahu-yamagandam')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get Rahu Kaal and Yamagandam (inauspicious periods) for a date at a location',
+  })
+  @ApiQuery({ name: 'date', required: true, description: 'Date YYYY-MM-DD', example: '2024-02-15' })
+  @ApiQuery({ name: 'placeOfBirth', required: false, description: 'City for location; defaults to Delhi' })
+  @ApiOkResponse({ description: 'Rahu Kaal and Yamagandam times (UTC)' })
+  async getRahuKaalYamagandam(
+    @Query('date') date: string,
+    @Query('placeOfBirth') placeOfBirth?: string,
+  ) {
+    const city = (placeOfBirth || 'Delhi').trim();
+    const { lat, lng } = await getCoordinatesFromCity(city);
+    return this.calendarService.getRahuKaalYamagandam(date, lat, lng);
+  }
+
   @Get('calendar/date')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

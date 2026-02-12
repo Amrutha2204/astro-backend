@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
 import * as express from 'express';
@@ -9,9 +10,10 @@ import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const nestLogger = createLogger('astro-service');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     logger: nestLogger,
+    rawBody: true, // keep raw body for payment webhook signature verification
   });
 
   app.useLogger(app.get(Logger));

@@ -10,10 +10,11 @@ import {
   Res,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ShareableCardService, StoredCard } from './shareable-card.service';
 import { CreateCardDto } from './dto/create-card.dto';
+import { ShareLinksRequestDto } from './dto/share-links.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -35,6 +36,26 @@ export class ShareableCardController {
     @Body() dto: CreateCardDto,
   ): Promise<StoredCard> {
     return this.shareableCardService.createAndStore(dto);
+  }
+
+  @Post('share-links')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get social share URLs for a card (WhatsApp, Twitter, Telegram)' })
+  @ApiBody({ type: ShareLinksRequestDto })
+  @ApiOkResponse({
+    description: 'Share URLs for the given card URL',
+    schema: {
+      example: {
+        whatsapp: 'https://wa.me/?text=...',
+        twitter: 'https://twitter.com/intent/tweet?text=...',
+        telegram: 'https://t.me/share/url?url=...',
+      },
+    },
+  })
+  async getShareLinks(@Body() dto: ShareLinksRequestDto) {
+    return this.shareableCardService.getShareLinks(dto.url, dto.title);
   }
 
   @Get('file/:filename')

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Param,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -12,9 +13,11 @@ import {
   ApiOperation,
   ApiTags,
   ApiBearerAuth,
+  ApiSecurity,
 } from '@nestjs/swagger';
 import { UserDetailsService } from './user-details.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { InternalApiKeyGuard } from '../common/guards/internal-api-key.guard';
 
 @Controller('api/v1/user-details')
 @ApiTags('User Details')
@@ -60,6 +63,25 @@ export class UserDetailsController {
     }
 
     return userDetails;
+  }
+
+  @Get('internal/:userId')
+  @UseGuards(InternalApiKeyGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiSecurity('InternalApiKey')
+  @ApiOperation({ summary: '[Internal] Get user details by userId for astro-service' })
+  @ApiOkResponse({ description: 'User details for the given userId' })
+  async getByUserIdInternal(@Param('userId') userId: string) {
+    const userDetails = await this.userDetailsService.findByUserId(userId);
+    if (!userDetails) {
+      throw new NotFoundException('User details not found');
+    }
+    return {
+      id: userDetails.id,
+      dob: userDetails.dob,
+      birthPlace: userDetails.birthPlace,
+      birthTime: userDetails.birthTime ?? '12:00:00',
+    };
   }
 }
 

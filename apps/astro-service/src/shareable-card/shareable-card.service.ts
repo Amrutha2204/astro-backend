@@ -35,6 +35,13 @@ export class ShareableCardService {
     }
   }
 
+  /** Treat empty or placeholder values as missing for display. */
+  private isMeaningful(value: unknown): boolean {
+    if (value == null) return false;
+    const s = String(value).trim();
+    return s.length > 0 && s !== '—' && s !== '-' && s.toLowerCase() !== 'n/a';
+  }
+
   /** Build SVG string for a horoscope or kundli summary card. */
   private buildCardSvg(dto: CreateCardDto): string {
     const title = dto.title || (dto.type === CardType.Horoscope ? "Today's Horoscope" : 'Kundli Summary');
@@ -42,20 +49,30 @@ export class ShareableCardService {
     const payload = dto.payload || {};
     const lines: string[] = [];
     if (dto.type === CardType.Horoscope) {
-      if (payload['dayType']) lines.push(`Day: ${payload['dayType']}`);
-      if (payload['mainTheme']) lines.push(`Theme: ${payload['mainTheme']}`);
-      if (payload['reason']) lines.push(`Reason: ${payload['reason']}`);
+      const dayType = this.isMeaningful(payload['dayType']) ? String(payload['dayType']).trim() : 'Based on today\'s chart';
+      const theme = this.isMeaningful(payload['mainTheme']) ? String(payload['mainTheme']).trim() : 'General planetary influence';
+      const reason = this.isMeaningful(payload['reason']) ? String(payload['reason']).trim() : 'Derived from current transits and Vedic methods.';
+      lines.push(`Day: ${dayType}`);
+      lines.push(`Theme: ${theme}`);
+      lines.push(`Reason: ${reason}`);
     } else {
       Object.entries(payload).slice(0, 8).forEach(([k, v]) => {
-        lines.push(`${String(k)}: ${String(v)}`);
+        const val = this.isMeaningful(v) ? String(v).trim() : 'Not specified';
+        lines.push(`${String(k).trim()}: ${val}`);
       });
+      if (lines.length === 0) lines.push('Based on your birth chart (Swiss Ephemeris).');
     }
-    const body = lines.length ? lines.join('\n') : 'No content';
+    const displayLines = lines.length ? lines : ['Based on your chart and current planetary positions.'];
     const width = 600;
     const height = 400;
     const bg = '#1a1a2e';
     const accent = '#e94560';
     const textColor = '#eee';
+    const lineHeight = 22;
+    const bodyY = 160;
+    const tspanLines = displayLines
+      .map((line, i) => `<tspan x="40" dy="${i === 0 ? 0 : lineHeight}">${this.escapeXml(line)}</tspan>`)
+      .join('\n  ');
     return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
@@ -68,7 +85,7 @@ export class ShareableCardService {
   <rect x="20" y="20" width="${width - 40}" height="4" fill="${accent}" rx="2"/>
   <text x="40" y="70" fill="${textColor}" font-family="system-ui, sans-serif" font-size="28" font-weight="bold">${this.escapeXml(title)}</text>
   <text x="40" y="105" fill="#aaa" font-family="system-ui, sans-serif" font-size="14">${this.escapeXml(date)}</text>
-  <text x="40" y="160" fill="${textColor}" font-family="system-ui, sans-serif" font-size="16" white-space="pre-wrap">${this.escapeXml(body)}</text>
+  <text x="40" y="${bodyY}" fill="${textColor}" font-family="system-ui, sans-serif" font-size="16">${tspanLines}</text>
   <text x="${width - 120}" y="${height - 30}" fill="#666" font-family="system-ui, sans-serif" font-size="12">Astro</text>
 </svg>`.trim();
   }
@@ -146,5 +163,17 @@ export class ShareableCardService {
     const path = this.getFilePath(filename);
     if (!path) return null;
     return readFileSync(path);
+  }
+
+  /** Build share URLs for social platforms (Shareable Part 2). */
+  getShareLinks(url: string, title?: string): { whatsapp: string; twitter: string; telegram: string } {
+    const text = title ? `${title} ${url}` : url;
+    const encoded = encodeURIComponent(text);
+    const encodedUrl = encodeURIComponent(url);
+    return {
+      whatsapp: `https://wa.me/?text=${encoded}`,
+      twitter: `https://twitter.com/intent/tweet?text=${encodedUrl}`,
+      telegram: `https://t.me/share/url?url=${encodedUrl}${title ? `&text=${encodeURIComponent(title)}` : ''}`,
+    };
   }
 }
