@@ -172,4 +172,39 @@ export class PaymentService {
     );
     return true;
   }
+
+  /** Get current user's transactions (for "My transactions" / wallet history). */
+  async getMyTransactions(
+    userId: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<{
+    items: Array<{
+      id: string;
+      type: string;
+      status: string;
+      amountPaise: string;
+      description: string | null;
+      createdAt: string;
+    }>;
+    total: number;
+  }> {
+    const [items, total] = await this.transactionRepo.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: Math.min(limit, 100),
+      skip: offset,
+    });
+    return {
+      items: items.map((t) => ({
+        id: t.id,
+        type: t.type,
+        status: t.status,
+        amountPaise: t.amountPaise,
+        description: t.description ?? null,
+        createdAt: t.createdAt.toISOString(),
+      })),
+      total,
+    };
+  }
 }

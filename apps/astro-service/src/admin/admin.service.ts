@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Transaction, TransactionType, TransactionStatus } from '../payment/entities/transaction.entity';
 import { Report } from '../premium-reports/entities/report.entity';
 import { UserSubscription, SubscriptionStatus } from '../subscription/entities/user-subscription.entity';
+import { AppConfigService } from '../config/config.service';
 
 @Injectable()
 export class AdminService {
@@ -14,6 +15,7 @@ export class AdminService {
     private readonly reportRepo: Repository<Report>,
     @InjectRepository(UserSubscription)
     private readonly subscriptionRepo: Repository<UserSubscription>,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   async getStats(): Promise<{
@@ -108,5 +110,21 @@ export class AdminService {
       })),
       total,
     };
+  }
+
+  async getContent(): Promise<{ sunSignMeanings?: string; planetMeanings?: string; transitInterpretations?: string }> {
+    return this.appConfig.getContent();
+  }
+
+  async setContent(content: { sunSignMeanings?: string; planetMeanings?: string; transitInterpretations?: string }): Promise<void> {
+    await this.appConfig.setContent(content);
+  }
+
+  async getAiEnabled(): Promise<boolean> {
+    return this.appConfig.getAiEnabled();
+  }
+
+  async setAiEnabled(enabled: boolean): Promise<void> {
+    await this.appConfig.setAiEnabled(enabled);
   }
 }

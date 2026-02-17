@@ -9,6 +9,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NatalChartService } from '../natal-chart/natal-chart.service';
 import { TransitsService } from '../transits/transits.service';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { AppConfigService } from '../config/config.service';
 import { RateLimitEntry } from '../common/interfaces/ai-assistant.interface';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { ChatDto } from './dto/chat.dto';
@@ -24,6 +25,7 @@ export class AiAssistantService {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly appConfigService: AppConfigService,
     private readonly natalChartService: NatalChartService,
     private readonly transitsService: TransitsService,
     private readonly astrologyEngineService: AstrologyEngineService,
@@ -355,6 +357,14 @@ IMPORTANT RULES:
 
   async chat(token: string, dto: ChatDto) {
     try {
+      const aiEnabled = await this.appConfigService.getAiEnabled();
+      if (!aiEnabled) {
+        throw new HttpException(
+          'AI assistant is currently disabled. Please try again later.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+
       const tokenValidation = this.validateToken(token);
       if (!tokenValidation.valid) {
         if (tokenValidation.expired) {
@@ -426,6 +436,14 @@ IMPORTANT RULES:
 
   async explainKundli(token: string, dto: ExplainKundliDto) {
     try {
+      const aiEnabled = await this.appConfigService.getAiEnabled();
+      if (!aiEnabled) {
+        throw new HttpException(
+          'AI assistant is currently disabled. Please try again later.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+
       const tokenValidation = this.validateToken(token);
       if (!tokenValidation.valid) {
         if (tokenValidation.expired) {

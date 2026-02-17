@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -71,6 +72,21 @@ export class PaymentController {
   @ApiOkResponse({ description: 'Balance in paise and rupees' })
   async getBalance(@CurrentUser() user: { userId: string }) {
     return this.paymentService.getBalance(user.userId);
+  }
+
+  @Get('transactions/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user transaction history' })
+  @ApiOkResponse({ description: 'Paginated list of user transactions' })
+  async getMyTransactions(
+    @CurrentUser() user: { userId: string },
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const l = limit ? Math.min(parseInt(limit, 10) || 50, 100) : 50;
+    const o = offset ? Math.max(0, parseInt(offset, 10)) : 0;
+    return this.paymentService.getMyTransactions(user.userId, l, o);
   }
 
   @Post('webhook/razorpay')
