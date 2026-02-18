@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
 import { LoggerModule } from '@astro/logger';
+import { AuthClientModule } from '../common/auth-client.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HoroscopeModule } from '../horoscope/horoscope.module';
@@ -46,6 +48,16 @@ import { AdminModule } from '../admin/admin.module';
         synchronize: false,
       }),
     }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        ({
+          secret: config.get<string>('JWT_SECRET') || undefined,
+          signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? '1h' },
+        }) as JwtModuleOptions,
+    }),
+    AuthClientModule,
     HoroscopeModule,
     KundliModule,
     NatalChartModule,

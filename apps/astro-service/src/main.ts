@@ -7,6 +7,7 @@ import { join } from 'path';
 import * as express from 'express';
 import { createLogger } from '@astro/logger';
 import { AppModule } from './app/app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const nestLogger = createLogger('astro-service');
@@ -17,7 +18,15 @@ async function bootstrap() {
   });
 
   app.useLogger(app.get(Logger));
-  app.enableCors();
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  const configService = app.get(ConfigService);
+  const corsOrigin = configService.get<string>('CORS_ORIGIN');
+  app.enableCors(
+    corsOrigin
+      ? { origin: corsOrigin.split(',').map((o) => o.trim()), credentials: true }
+      : undefined,
+  );
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -26,7 +35,6 @@ async function bootstrap() {
     }),
   );
 
-  const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') ?? 8002;
 
   const swaggerConfig = new DocumentBuilder()

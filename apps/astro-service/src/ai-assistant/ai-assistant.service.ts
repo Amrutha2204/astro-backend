@@ -10,6 +10,7 @@ import { NatalChartService } from '../natal-chart/natal-chart.service';
 import { TransitsService } from '../transits/transits.service';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
 import { AppConfigService } from '../config/config.service';
+import { AuthClientService } from '../common/services/auth-client.service';
 import { RateLimitEntry } from '../common/interfaces/ai-assistant.interface';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { ChatDto } from './dto/chat.dto';
@@ -26,6 +27,7 @@ export class AiAssistantService {
   constructor(
     private readonly configService: ConfigService,
     private readonly appConfigService: AppConfigService,
+    private readonly authClient: AuthClientService,
     private readonly natalChartService: NatalChartService,
     private readonly transitsService: TransitsService,
     private readonly astrologyEngineService: AstrologyEngineService,
@@ -95,40 +97,7 @@ export class AiAssistantService {
   }
 
   private async fetchUserDetails(token: string) {
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
-
-    const userDetailsResponse = await fetch(
-      `${authServiceUrl}/api/v1/user-details/me`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      },
-    );
-
-    if (!userDetailsResponse.ok) {
-      if (userDetailsResponse.status === 401) {
-        throw new HttpException(
-          'Invalid or expired token. Please login again.',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-      if (userDetailsResponse.status === 404) {
-        throw new HttpException(
-          'Birth details not found. Please complete your profile first.',
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      throw new HttpException(
-        'Failed to fetch user details.',
-        userDetailsResponse.status,
-      );
-    }
-
-    return userDetailsResponse.json();
+    return this.authClient.getMe(token);
   }
 
   private checkRateLimit(userId: string): void {

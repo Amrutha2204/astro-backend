@@ -15,6 +15,7 @@ import { ApiOkResponse, ApiOperation, ApiTags, ApiBearerAuth, ApiBody } from '@n
 import { Response } from 'express';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { AuthClientService } from '../common/services/auth-client.service';
 import { PremiumReportsService } from './premium-reports.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { PaymentService } from '../payment/payment.service';
@@ -39,6 +40,7 @@ export class PremiumReportsController {
     private readonly paymentService: PaymentService,
     private readonly kundliService: KundliService,
     private readonly compatibilityService: CompatibilityService,
+    private readonly authClient: AuthClientService,
   ) {}
 
   @Post('generate')
@@ -63,18 +65,7 @@ export class PremiumReportsController {
       );
     }
     if (dto.reportType === 'kundli_summary') {
-      const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
-      const userDetailsResponse = await fetch(`${authServiceUrl}/api/v1/user-details/me`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${user.token}`, Accept: 'application/json' },
-      });
-      if (!userDetailsResponse.ok) {
-        if (userDetailsResponse.status === 404) {
-          throw new HttpException('Birth details not found. Complete your profile first.', HttpStatus.BAD_REQUEST);
-        }
-        throw new HttpException('Failed to fetch user details.', userDetailsResponse.status);
-      }
-      const userDetails = await userDetailsResponse.json();
+      const userDetails = await this.authClient.getMe(user.token);
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException('Birth details incomplete.', HttpStatus.BAD_REQUEST);
       }
@@ -218,18 +209,7 @@ export class PremiumReportsController {
     }
 
     if (dto.reportType === 'kundli_summary') {
-      const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
-      const userDetailsResponse = await fetch(`${authServiceUrl}/api/v1/user-details/me`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${user.token}`, Accept: 'application/json' },
-      });
-      if (!userDetailsResponse.ok) {
-        if (userDetailsResponse.status === 404) {
-          throw new HttpException('Birth details not found. Complete your profile first.', HttpStatus.BAD_REQUEST);
-        }
-        throw new HttpException('Failed to fetch user details.', userDetailsResponse.status);
-      }
-      const userDetails = await userDetailsResponse.json();
+      const userDetails = await this.authClient.getMe(user.token);
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException('Birth details incomplete.', HttpStatus.BAD_REQUEST);
       }

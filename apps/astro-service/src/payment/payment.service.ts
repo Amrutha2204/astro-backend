@@ -87,12 +87,19 @@ export class PaymentService {
     tx.status = TransactionStatus.SUCCESS;
     tx.razorpayPaymentId = paymentId;
     await this.transactionRepo.save(tx);
+    await this.creditWallet(userId, Number(tx.amountPaise), `Payment ${paymentId}`);
     return { status: 'captured', transactionId: tx.id };
   }
 
   /** Handle Razorpay webhook (payment.captured etc.). */
   async handleWebhook(body: string, signature: string) {
     if (!this.webhookSecret) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new HttpException(
+          'Webhook secret not configured. Set RAZORPAY_WEBHOOK_SECRET in production.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
       this.logger.warn('RAZORPAY_WEBHOOK_SECRET not set; skipping webhook verification');
       return { received: true };
     }
