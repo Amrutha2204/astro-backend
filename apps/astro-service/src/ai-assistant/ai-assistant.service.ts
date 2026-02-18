@@ -324,6 +324,18 @@ IMPORTANT RULES:
     }
   }
 
+  /** Public: generate text from a prompt (used by career guidance etc.). Checks AI enabled. */
+  async generateFromPrompt(prompt: string): Promise<string> {
+    const aiEnabled = await this.appConfigService.getAiEnabled();
+    if (!aiEnabled) {
+      throw new HttpException(
+        'AI assistant is currently disabled. Please try again later.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+    return this.callGemini(prompt);
+  }
+
   async chat(token: string, dto: ChatDto) {
     try {
       const aiEnabled = await this.appConfigService.getAiEnabled();

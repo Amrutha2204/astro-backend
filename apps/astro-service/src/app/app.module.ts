@@ -26,12 +26,17 @@ import { PaymentModule } from '../payment/payment.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { PremiumReportsModule } from '../premium-reports/premium-reports.module';
 import { AdminModule } from '../admin/admin.module';
+import { FamilyProfileModule } from '../family-profile/family-profile.module';
+import { CareerModule } from '../career/career.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [join(process.cwd(), 'apps/astro-service/.env')],
+      envFilePath: [
+        join(process.cwd(), 'apps/astro-service/.env'),
+        join(process.cwd(), '.env'),
+      ],
     }),
     LoggerModule.forRoot('astro-service'),
     ScheduleModule.forRoot(),
@@ -53,8 +58,13 @@ import { AdminModule } from '../admin/admin.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) =>
         ({
-          secret: config.get<string>('JWT_SECRET') || undefined,
-          signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? '1h' },
+          secret:
+            config.get<string>('JWT_SECRET') ||
+            process.env.JWT_SECRET ||
+            undefined,
+          signOptions: {
+            expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? process.env.JWT_EXPIRES_IN ?? '1h',
+          },
         }) as JwtModuleOptions,
     }),
     AuthClientModule,
@@ -76,6 +86,8 @@ import { AdminModule } from '../admin/admin.module';
     SubscriptionModule,
     PremiumReportsModule,
     AdminModule,
+    FamilyProfileModule,
+    CareerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
