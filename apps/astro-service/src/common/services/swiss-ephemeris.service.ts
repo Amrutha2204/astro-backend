@@ -364,6 +364,80 @@ export class SwissEphemerisService {
     }
   }
 
+  /**
+   * Get Moon rise and set for a given date and location.
+   * Times are returned in UTC as HH:mm strings.
+   */
+  getMoonRiseSet(
+    year: number,
+    month: number,
+    day: number,
+    longitude: number,
+    latitude: number,
+    heightMeters: number = 0,
+  ): {
+    moonRise: string;
+    moonSet: string;
+  } | { error: string } {
+    try {
+      const jdStart = this.dateToJulianDay(year, month, day, 0, 0, 0);
+      const atpress = 1013.25;
+      const attemp = 15;
+
+      const riseResult = swisseph.swe_rise_trans(
+        jdStart,
+        swisseph.SE_MOON,
+        '',
+        swisseph.SEFLG_SWIEPH,
+        swisseph.SE_CALC_RISE,
+        longitude,
+        latitude,
+        heightMeters,
+        atpress,
+        attemp,
+      );
+      const setResult = swisseph.swe_rise_trans(
+        jdStart,
+        swisseph.SE_MOON,
+        '',
+        swisseph.SEFLG_SWIEPH,
+        swisseph.SE_CALC_SET,
+        longitude,
+        latitude,
+        heightMeters,
+        atpress,
+        attemp,
+      );
+
+      if ('error' in riseResult || 'error' in setResult) {
+        return {
+          error:
+            ('error' in riseResult && riseResult.error) ||
+            ('error' in setResult && setResult.error) ||
+            'Unknown error',
+        };
+      }
+
+      const jdToTime = (jd: number): string => {
+        const utc = swisseph.swe_jdut1_to_utc(jd, swisseph.SE_GREG_CAL);
+        const h = Math.floor(utc.hour);
+        const m = Math.floor(utc.minute);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
+
+      return {
+        moonRise: jdToTime(riseResult.transitTime),
+        moonSet: jdToTime(setResult.transitTime),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error getting moon rise/set: ${error.message}`,
+        error.stack,
+      );
+      return { error: String(error.message) };
+    }
+  }
+
   /** Parse YYYY-MM-DD and return Julian day (UT) at noon. */
   dateStringToJulianDay(dateStr: string): number {
     const [y, m, d] = dateStr.split('-').map(Number);

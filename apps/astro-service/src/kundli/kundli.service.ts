@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { KundliDto } from './dto/kundli.dto';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { HOUSE_MEANINGS } from '../common/constants/astrology.constants';
 
 @Injectable()
 export class KundliService {
@@ -58,6 +59,7 @@ export class KundliService {
           house: h.house,
           sign: h.sign,
           degree: h.degree,
+          meaning: HOUSE_MEANINGS[h.house] ?? '',
         })),
         source: 'Swiss Ephemeris',
       };
@@ -118,6 +120,7 @@ export class KundliService {
           house: h.house,
           sign: h.sign,
           degree: h.signDegree ?? h.degree ?? 0,
+          meaning: HOUSE_MEANINGS[h.house] ?? '',
         })),
         source: 'Swiss Ephemeris (Western)',
       };

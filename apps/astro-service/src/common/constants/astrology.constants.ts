@@ -169,3 +169,19 @@ export const BENEFICIAL_PLANETS = ['jupiter', 'venus', 'mercury'] as const;
 
 /** Challenging planets for day-type scoring. */
 export const CHALLENGING_PLANETS = ['saturn', 'mars', 'rahu', 'ketu'] as const;
+
+/** House number (1–12) to life-area meaning for Kundli display. */
+export const HOUSE_MEANINGS: Record<number, string> = {
+  1: 'Personality, Self',
+  2: 'Money, Speech',
+  3: 'Courage, Communication',
+  4: 'Home, Family',
+  5: 'Education, Creativity',
+  6: 'Health, Enemies',
+  7: 'Marriage, Relationships',
+  8: 'Transformation',
+  9: 'Luck, Wisdom',
+  10: 'Career, Reputation',
+  11: 'Network, Friends',
+  12: 'Spirituality, Isolation',
+};

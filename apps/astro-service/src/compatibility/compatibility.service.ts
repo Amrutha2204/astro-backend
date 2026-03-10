@@ -9,6 +9,7 @@ import {
   COMPATIBLE_YONI_PAIRS,
   GANA_MAP,
   GOOD_TARAS,
+  GUNA_PARAMETER_MEANINGS,
   SIGN_GROUPS,
   VARNA_MAP,
   VASHYA_GROUPS,
@@ -185,6 +186,7 @@ export class CompatibilityService {
       score,
       maxScore: 1,
       description: score === 1 ? 'Varna matching is good' : 'Varna matching needs attention',
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Varna'] ?? '',
     };
   }
 
@@ -215,6 +217,7 @@ export class CompatibilityService {
         : score === 1 
         ? 'Vashya matching is good (compatible elements)' 
         : 'Vashya matching needs attention',
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Vashya'] ?? '',
     };
   }
 
@@ -230,6 +233,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 3,
         description: 'Tara calculation requires nakshatra data',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Tara'] ?? '',
       };
     }
     
@@ -242,6 +246,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 3,
         description: 'Invalid nakshatra data',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Tara'] ?? '',
       };
     }
     
@@ -269,6 +274,7 @@ export class CompatibilityService {
         : score === 0 
         ? `Tara matching is unfavorable (Tara ${taraNumber})` 
         : `Tara matching is neutral (Tara ${taraNumber})`,
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Tara'] ?? '',
     };
   }
 
@@ -284,6 +290,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 4,
         description: 'Yoni calculation requires nakshatra data',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Yoni'] ?? '',
       };
     }
     
@@ -296,6 +303,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 4,
         description: 'Invalid nakshatra data for Yoni',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Yoni'] ?? '',
       };
     }
     
@@ -316,6 +324,7 @@ export class CompatibilityService {
         : score === 2 
         ? `Yoni matching is good (${yoni1} and ${yoni2} are compatible)` 
         : `Yoni matching needs attention (${yoni1} and ${yoni2})`,
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Yoni'] ?? '',
     };
   }
 
@@ -329,6 +338,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 5,
         description: 'Graha Maitri calculation requires Moon sign data',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Graha Maitri'] ?? '',
       };
     }
     
@@ -361,6 +371,7 @@ export class CompatibilityService {
         : score === 2 
         ? 'Planetary friendship is neutral' 
         : 'Planetary friendship needs attention',
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Graha Maitri'] ?? '',
     };
   }
 
@@ -376,6 +387,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 6,
         description: 'Gana calculation requires nakshatra data',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Gana'] ?? '',
       };
     }
     
@@ -388,6 +400,7 @@ export class CompatibilityService {
         score: 0,
         maxScore: 6,
         description: 'Invalid nakshatra data for Gana',
+        parameterMeaning: GUNA_PARAMETER_MEANINGS['Gana'] ?? '',
       };
     }
     
@@ -419,6 +432,7 @@ export class CompatibilityService {
         : score >= 3 
         ? `Gana matching is acceptable (${gana1} and ${gana2})` 
         : `Gana matching is incompatible (${gana1} and ${gana2})`,
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Gana'] ?? '',
     };
   }
 
@@ -433,6 +447,7 @@ export class CompatibilityService {
       score: hasDosha ? 0 : 7,
       maxScore: 7,
       description: hasDosha ? 'Bhakoot dosha present' : 'Bhakoot matching is good',
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Bhakoot'] ?? '',
     };
   }
 
@@ -450,6 +465,7 @@ export class CompatibilityService {
       score: hasDosha ? 0 : 8,
       maxScore: 8,
       description: hasDosha ? 'Nadi dosha present' : 'Nadi matching is excellent',
+      parameterMeaning: GUNA_PARAMETER_MEANINGS['Nadi'] ?? '',
     };
   }
 

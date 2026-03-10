@@ -40,20 +40,43 @@ export class CalendarService {
 
       const moonPhase = this.calculateMoonPhase(moonPlanet, sunPlanet);
       const nakshatra = this.getNakshatraFromLongitude(moonPlanet?.longitude || 0);
+      const { tithi, paksha } = this.calculateTithiAndPaksha(moonPlanet, sunPlanet);
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const sunRiseSet = this.swissEphemerisService.getSunRiseSetTransit(
+        year, month, day, longitude, latitude,
+      );
+      const moonRiseSet = this.swissEphemerisService.getMoonRiseSet(
+        year, month, day, longitude, latitude,
+      );
 
       const majorEvents: string[] = [];
       if (this.isAuspiciousDay(planets)) {
         majorEvents.push('Auspicious day');
       }
 
-      return {
+      const out: Record<string, any> = {
         moonPhase,
-        tithi: this.calculateTithi(moonPlanet, sunPlanet),
+        tithi,
+        paksha,
         nakshatra,
+        ritu: this.getRituFromDate(year, month, day),
+        hinduMonth: this.getHinduMonthFromDate(year, month, day),
         majorPlanetaryEvents: majorEvents.length > 0 ? majorEvents : ['No major events'],
-        date: new Date().toISOString().split('T')[0],
+        date: dateStr,
         source: 'Swiss Ephemeris',
       };
+
+      if (sunRiseSet && !('error' in sunRiseSet)) {
+        out.sunrise = sunRiseSet.sunrise;
+        out.sunset = sunRiseSet.sunset;
+      }
+      if (moonRiseSet && !('error' in moonRiseSet)) {
+        out.moonRise = moonRiseSet.moonRise;
+        out.moonSet = moonRiseSet.moonSet;
+      }
+
+      return out;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -90,7 +113,13 @@ export class CalendarService {
   }
 
   private calculateTithi(moonPlanet: any, sunPlanet: any): string {
-    if (!moonPlanet || !sunPlanet) return 'Unknown';
+    const { tithi } = this.calculateTithiAndPaksha(moonPlanet, sunPlanet);
+    return tithi;
+  }
+
+  /** Returns tithi string and paksha (Shukla/Krishna) for calendar response. */
+  private calculateTithiAndPaksha(moonPlanet: any, sunPlanet: any): { tithi: string; paksha: string } {
+    if (!moonPlanet || !sunPlanet) return { tithi: 'Unknown', paksha: 'Unknown' };
 
     const moonLongitude = moonPlanet.longitude;
     const sunLongitude = sunPlanet.longitude;
@@ -101,8 +130,27 @@ export class CalendarService {
     const tithiNumber = Math.floor(elongation / 12) + 1;
     const paksha = tithiNumber <= 15 ? 'Shukla' : 'Krishna';
     const tithiDay = tithiNumber <= 15 ? tithiNumber : tithiNumber - 15;
+    const tithi = `${paksha} ${tithiDay}`;
 
-    return `${paksha} ${tithiDay}`;
+    return { tithi, paksha };
+  }
+
+  /** Ritu (season) by solar month (1–12). */
+  private getRituFromDate(year: number, month: number, _day: number): string {
+    const RITU_BY_MONTH: Record<number, string> = {
+      1: 'Shishir', 2: 'Shishir', 3: 'Vasant', 4: 'Vasant', 5: 'Grishma', 6: 'Grishma',
+      7: 'Varsha', 8: 'Varsha', 9: 'Sharad', 10: 'Sharad', 11: 'Hemant', 12: 'Hemant',
+    };
+    return RITU_BY_MONTH[month] ?? 'Unknown';
+  }
+
+  /** Hindu solar month name by solar month (1–12). */
+  private getHinduMonthFromDate(year: number, month: number, _day: number): string {
+    const HINDU_MONTH: Record<number, string> = {
+      1: 'Magha', 2: 'Phalguna', 3: 'Chaitra', 4: 'Vaisakha', 5: 'Jyeshtha', 6: 'Ashadha',
+      7: 'Sravana', 8: 'Bhadrapada', 9: 'Ashwin', 10: 'Kartika', 11: 'Margashirsha', 12: 'Pausha',
+    };
+    return HINDU_MONTH[month] ?? 'Unknown';
   }
 
   private getNakshatraFromLongitude(longitude: number): string {
@@ -391,13 +439,33 @@ export class CalendarService {
     if (this.isAuspiciousDay(planets)) {
       majorEvents.push('Auspicious day');
     }
-    return {
+    const { tithi, paksha } = this.calculateTithiAndPaksha(moonPlanet, sunPlanet);
+    const sunRiseSet = this.swissEphemerisService.getSunRiseSetTransit(
+      y, m, d, longitude, latitude,
+    );
+    const moonRiseSet = this.swissEphemerisService.getMoonRiseSet(
+      y, m, d, longitude, latitude,
+    );
+
+    const out: Record<string, any> = {
       moonPhase: this.calculateMoonPhase(moonPlanet, sunPlanet),
-      tithi: this.calculateTithi(moonPlanet, sunPlanet),
+      tithi,
+      paksha,
       nakshatra: this.getNakshatraFromLongitude(moonPlanet?.longitude || 0),
+      ritu: this.getRituFromDate(y, m, d),
+      hinduMonth: this.getHinduMonthFromDate(y, m, d),
       majorPlanetaryEvents: majorEvents.length > 0 ? majorEvents : ['No major events'],
       date,
       source: 'Swiss Ephemeris',
     };
+    if (sunRiseSet && !('error' in sunRiseSet)) {
+      out.sunrise = sunRiseSet.sunrise;
+      out.sunset = sunRiseSet.sunset;
+    }
+    if (moonRiseSet && !('error' in moonRiseSet)) {
+      out.moonRise = moonRiseSet.moonRise;
+      out.moonSet = moonRiseSet.moonSet;
+    }
+    return out;
   }
 }

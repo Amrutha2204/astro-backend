@@ -21,7 +21,18 @@ export class CareerService {
     userId: string,
     token: string,
     profileId?: string,
-  ): Promise<{ guidance: string; profileIdUsed: string | null; timestamp: string }> {
+  ): Promise<{
+    guidance: string;
+    sections?: {
+      strengths?: string;
+      suitableFields?: string;
+      timing?: string;
+      tips?: string;
+      disclaimer?: string;
+    };
+    profileIdUsed: string | null;
+    timestamp: string;
+  }> {
     let dob: string;
     let birthPlace: string;
     let birthTime: string;
@@ -68,20 +79,61 @@ export class CareerService {
 **Current transits (today):**
 ${JSON.stringify(transits.majorActiveTransits || [])}
 
-Provide 4–6 short paragraphs covering:
-1. Natural strengths and suitable career fields based on the birth chart.
-2. Favorable job sectors or roles to consider.
-3. Timing: when to take career risks or apply for changes (based on current transits).
-4. One or two practical tips for interviews or workplace success.
-5. A brief reminder that astrology is for reflection and self-awareness, not a substitute for effort and planning.
+You MUST structure your response using exactly these section headers (each on its own line, with nothing else on that line):
+## Strengths
+## Suitable Fields
+## Timing
+## Tips
+## Disclaimer
 
-Keep the tone supportive and professional. Do not give medical, legal, or financial advice.`;
+Under each header, write 1–3 short paragraphs. For Strengths: natural strengths and suitable career fields from the birth chart. For Suitable Fields: favorable job sectors or roles. For Timing: when to take career risks or apply for changes based on transits. For Tips: one or two practical tips for interviews or workplace success. For Disclaimer: a brief reminder that astrology is for reflection and self-awareness, not a substitute for effort and planning. Keep the tone supportive and professional. Do not give medical, legal, or financial advice.`;
 
     const guidance = await this.aiAssistantService.generateFromPrompt(prompt);
+    const sections = this.parseGuidanceSections(guidance);
     return {
       guidance,
+      sections: Object.keys(sections).length > 0 ? sections : undefined,
       profileIdUsed: profileId ?? null,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  private parseGuidanceSections(text: string): {
+    strengths?: string;
+    suitableFields?: string;
+    timing?: string;
+    tips?: string;
+    disclaimer?: string;
+  } {
+    const sections: Record<string, string> = {};
+    const headers = [
+      '## Strengths',
+      '## Suitable Fields',
+      '## Timing',
+      '## Tips',
+      '## Disclaimer',
+    ];
+    const keys: (keyof typeof sections)[] = [
+      'strengths',
+      'suitableFields',
+      'timing',
+      'tips',
+      'disclaimer',
+    ];
+    for (let i = 0; i < headers.length; i++) {
+      const start = text.indexOf(headers[i]);
+      if (start === -1) continue;
+      const contentStart = start + headers[i].length;
+      const nextStart =
+        i < headers.length - 1
+          ? text.indexOf(headers[i + 1], contentStart)
+          : text.length;
+      const content = text
+        .slice(contentStart, nextStart > contentStart ? nextStart : text.length)
+        .replace(/^\s*\n+|\n+\s*$/g, '')
+        .trim();
+      if (content) sections[keys[i]] = content;
+    }
+    return sections as any;
   }
 }
