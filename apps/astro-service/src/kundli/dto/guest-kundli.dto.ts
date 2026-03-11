@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsString, MinLength, IsOptional, IsBoolean } from 'class-validator';
+import { IsDateString, IsString, MinLength, IsOptional, IsBoolean, IsIn } from 'class-validator';
 
 export class GuestKundliRequestDto {
   @ApiProperty({
@@ -33,4 +33,20 @@ export class GuestKundliRequestDto {
   @IsString()
   @MinLength(3, { message: 'Place of birth must be at least 3 characters' })
   placeOfBirth: string;
+
+  @ApiPropertyOptional({
+    description: 'Chart system: vedic (sidereal) or western (tropical). Default vedic.',
+    enum: ['vedic', 'western'],
+  })
+  @IsOptional()
+  @IsIn(['vedic', 'western'], { message: 'system must be vedic or western' })
+  system?: 'vedic' | 'western';
+
+  @ApiPropertyOptional({
+    description: 'Vedic chart variant: lagna (D-1), navamsa (D-9), saptamsa (D-7), dasamsa (D-10), etc. Ignored when system is western.',
+    example: 'lagna',
+  })
+  @IsOptional()
+  @IsString()
+  chart?: string;
 }

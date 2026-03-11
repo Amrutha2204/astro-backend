@@ -34,6 +34,8 @@ export interface VedicChartData {
     longitude: number;
     nakshatra?: string;
     pada?: number;
+    /** Longitudinal speed (deg/day). Negative = retrograde. */
+    speed?: number;
   }>;
   houses: Array<{
     house: number;

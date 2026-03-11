@@ -17,7 +17,6 @@ export class SwissEphemerisService {
     minute: number = 0,
     second: number = 0,
   ): number {
-    const date = new Date(year, month - 1, day, hour, minute, second);
     return swisseph.swe_julday(
       year,
       month,
@@ -27,6 +26,43 @@ export class SwissEphemerisService {
     );
   }
 
+  /**
+   * Convert local time at birth place to Julian day (UT).
+   * Birth time is interpreted as local time; timezoneOffsetHours is east-of-Greenwich (e.g. 5.5 for IST).
+   */
+  localTimeToJulianDayUt(
+    year: number,
+    month: number,
+    day: number,
+    hour: number,
+    minute: number,
+    second: number,
+    timezoneOffsetHours: number,
+  ): number {
+    const utc = swisseph.swe_utc_time_zone(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      timezoneOffsetHours,
+    );
+    const result = swisseph.swe_utc_to_jd(
+      utc.year,
+      utc.month,
+      utc.day,
+      utc.hour,
+      utc.minute,
+      utc.second,
+      swisseph.SE_GREG_CAL,
+    );
+    if (result && 'error' in result) {
+      throw new Error(String((result as { error: string }).error));
+    }
+    return (result as { julianDayUT: number }).julianDayUT;
+  }
+
   private longitudeToSign(longitude: number): { sign: string; degree: number } {
     const signIndex = Math.floor(longitude / 30);
     const degree = longitude % 30;
@@ -34,6 +70,76 @@ export class SwissEphemerisService {
       sign: ZODIAC_SIGNS[signIndex % 12],
       degree: degree,
     };
+  }
+
+  async calculatePlanetaryPositionsFromJulianDay(
+    julianDayUt: number,
+  ): Promise<PlanetaryPosition[]> {
+    try {
+      const planets: PlanetaryPosition[] = [];
+      const planetIds = [
+        { id: swisseph.SE_SUN, name: 'Sun' },
+        { id: swisseph.SE_MOON, name: 'Moon' },
+        { id: swisseph.SE_MERCURY, name: 'Mercury' },
+        { id: swisseph.SE_VENUS, name: 'Venus' },
+        { id: swisseph.SE_MARS, name: 'Mars' },
+        { id: swisseph.SE_JUPITER, name: 'Jupiter' },
+        { id: swisseph.SE_SATURN, name: 'Saturn' },
+        { id: swisseph.SE_URANUS, name: 'Uranus' },
+        { id: swisseph.SE_NEPTUNE, name: 'Neptune' },
+        { id: swisseph.SE_PLUTO, name: 'Pluto' },
+        { id: swisseph.SE_MEAN_NODE, name: 'Rahu' },
+        { id: swisseph.SE_TRUE_NODE, name: 'Ketu' },
+      ];
+      for (const planet of planetIds) {
+        try {
+          const result = swisseph.swe_calc_ut(
+            julianDayUt,
+            planet.id,
+            swisseph.SEFLG_SWIEPH | swisseph.SEFLG_SPEED,
+          );
+          if (result && 'longitude' in result) {
+            const { sign, degree } = this.longitudeToSign(result.longitude);
+            planets.push({
+              planet: planet.name,
+              longitude: result.longitude,
+              latitude: result.latitude || 0,
+              distance: result.distance || 0,
+              speed: result.longitudeSpeed || 0,
+              sign: sign,
+              signDegree: degree,
+            });
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to calculate position for ${planet.name}: ${error.message}`,
+          );
+        }
+      }
+      const rahu = planets.find((p) => p.planet === 'Rahu');
+      if (rahu) {
+        const ketuLongitude = (rahu.longitude + 180) % 360;
+        const { sign, degree } = this.longitudeToSign(ketuLongitude);
+        const ketuIndex = planets.findIndex((p) => p.planet === 'Ketu');
+        if (ketuIndex >= 0) {
+          planets[ketuIndex] = {
+            ...planets[ketuIndex],
+            longitude: ketuLongitude,
+            latitude: rahu.latitude ? -rahu.latitude : 0,
+            speed: rahu.speed ? -rahu.speed : 0,
+            sign: sign,
+            signDegree: degree,
+          };
+        }
+      }
+      return planets;
+    } catch (error) {
+      this.logger.error(
+        `Error calculating planetary positions: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   async calculatePlanetaryPositions(
@@ -119,6 +225,70 @@ export class SwissEphemerisService {
     }
   }
 
+  async calculateHousesFromJulianDay(
+    julianDayUt: number,
+    latitude: number,
+    longitude: number,
+    houseSystem: string = 'P',
+  ): Promise<{
+    ascendant: { longitude: number; sign: string; signDegree: number };
+    mc: { longitude: number; sign: string; signDegree: number };
+    houses: HouseCusp[];
+  }> {
+    try {
+      const housesResult = swisseph.swe_houses(
+        julianDayUt,
+        latitude,
+        longitude,
+        houseSystem,
+      );
+      if (!housesResult || 'error' in housesResult || !housesResult.house) {
+        throw new Error(
+          'error' in housesResult
+            ? housesResult.error
+            : 'Failed to calculate houses',
+        );
+      }
+      const houseArray = housesResult.house;
+      const ascendant = housesResult.ascendant;
+      const mc = housesResult.mc;
+      const houses: HouseCusp[] = [];
+      for (let i = 1; i <= 12; i++) {
+        let cuspLongitude = houseArray[i];
+        if (cuspLongitude === undefined || cuspLongitude === null || isNaN(cuspLongitude)) {
+          if (i === 12 && houseArray[1] !== undefined) {
+            cuspLongitude = (houseArray[1] + 180) % 360;
+          } else {
+            continue;
+          }
+        }
+        const { sign, degree } = this.longitudeToSign(cuspLongitude);
+        houses.push({
+          house: i,
+          longitude: cuspLongitude,
+          sign: sign,
+          signDegree: degree,
+        });
+      }
+      return {
+        ascendant: {
+          longitude: ascendant,
+          sign: this.longitudeToSign(ascendant).sign,
+          signDegree: this.longitudeToSign(ascendant).degree,
+        },
+        mc: {
+          longitude: mc,
+          sign: this.longitudeToSign(mc).sign,
+          signDegree: this.longitudeToSign(mc).degree,
+        },
+        houses: houses,
+      };
+    } catch (error) {
+      this.logger.error(`Error calculating houses: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   async calculateHouses(
     year: number,
     month: number,
@@ -192,6 +362,38 @@ export class SwissEphemerisService {
     }
   }
 
+  async calculateBirthChartFromJulianDay(
+    julianDayUt: number,
+    latitude: number,
+    longitude: number,
+    houseSystem: string = 'P',
+  ): Promise<BirthChartData> {
+    try {
+      const [planets, housesData] = await Promise.all([
+        this.calculatePlanetaryPositionsFromJulianDay(julianDayUt),
+        this.calculateHousesFromJulianDay(
+          julianDayUt,
+          latitude,
+          longitude,
+          houseSystem,
+        ),
+      ]);
+      return {
+        ascendant: housesData.ascendant,
+        mc: housesData.mc,
+        planets: planets,
+        houses: housesData.houses,
+        julianDay: julianDayUt,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error calculating birth chart: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
   async calculateBirthChart(
     year: number,
     month: number,
@@ -240,6 +442,7 @@ export class SwissEphemerisService {
     }
   }
 
+  /** Tropical to sidereal (Vedic). Default: Lahiri ayanamsa (Indian standard). */
   convertToSidereal(
     tropicalLongitude: number,
     julianDay: number,

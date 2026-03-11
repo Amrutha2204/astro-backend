@@ -22,9 +22,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res = exception.getResponse();
-      message =
+      const raw =
         typeof res === 'string' ? res : (res as { message?: string | string[] })?.message ?? message;
-      if (Array.isArray(message)) message = message[0] ?? 'Bad request';
+      message = Array.isArray(raw) ? (raw[0] ?? 'Bad request') : raw;
     } else if (exception instanceof Error) {
       this.logger.error(`${exception.message} ${exception.stack || ''}`);
     }

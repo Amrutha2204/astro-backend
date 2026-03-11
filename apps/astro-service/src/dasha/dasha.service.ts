@@ -6,6 +6,7 @@ import {
 } from '../common/constants/astrology.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
 import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
+import { getTimezoneOffsetFromLongitude } from '../common/utils/birth-time.util';
 import type { DashaDetails, DashaPeriod } from './interfaces/dasha.interface';
 
 export type { DashaDetails, DashaPeriod } from './interfaces/dasha.interface';
@@ -29,27 +30,33 @@ export class DashaService {
     longitude: number,
   ): Promise<DashaDetails> {
     try {
-      const vedicChart = await this.astrologyEngineService.calculateVedicChart({
+      const timezoneOffset = getTimezoneOffsetFromLongitude(longitude);
+      const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
         year,
         month,
         day,
         hour,
         minute,
-        latitude,
-        longitude,
-      });
+        0,
+        timezoneOffset,
+      );
+      const vedicChart =
+        await this.astrologyEngineService.calculateVedicChartFromJulianDay(
+          julianDayUt,
+          latitude,
+          longitude,
+        );
 
       const moonNakshatra = vedicChart.planets.find((p) => p.planet === 'Moon')?.nakshatra || '';
       const moonLongitude = vedicChart.planets.find((p) => p.planet === 'Moon')?.longitude || 0;
-      
-      const birthDate = new Date(year, month - 1, day, hour, minute);
+      const birthDate = new Date((julianDayUt - 2440587.5) * 86400 * 1000);
       const currentDate = new Date();
       
       const dashaStartPlanet = this.getDashaStartPlanet(moonNakshatra);
       const dashaStartDate = this.calculateDashaStartDate(birthDate, moonLongitude, dashaStartPlanet);
       
-      const currentDasha = this.getCurrentDasha(dashaStartDate, currentDate);
-      const timeline = this.generateDashaTimeline(dashaStartDate, currentDate, 10);
+      const currentDasha = this.getCurrentDasha(dashaStartDate, currentDate, dashaStartPlanet);
+      const timeline = this.generateDashaTimeline(dashaStartDate, currentDate, 10, dashaStartPlanet);
 
       return {
         current: currentDasha,
@@ -61,8 +68,17 @@ export class DashaService {
     }
   }
 
+  /** Vimshottari dasha ruler of the Moon's nakshatra at birth. */
   private getDashaStartPlanet(nakshatra: string): string {
     return NAKSHATRA_PLANET_MAP[nakshatra] || 'Moon';
+  }
+
+  /** DASHA_ORDER rotated so that startPlanet is first (for correct cycle from birth mahadasha). */
+  private dashaOrderFrom(startPlanet: string): string[] {
+    const order = DASHA_ORDER as readonly string[];
+    const i = order.indexOf(startPlanet);
+    if (i < 0) return [...order];
+    return [...order.slice(i), ...order.slice(0, i)];
   }
 
   private calculateDashaStartDate(
@@ -83,22 +99,25 @@ export class DashaService {
     return startDate;
   }
 
-  private getCurrentDasha(startDate: Date, currentDate: Date): any {
+  /**
+   * Vimshottari: startDate is the start of the mahadasha that was running at birth (startPlanet).
+   * We iterate dashas in order starting from startPlanet to find current mahadasha and antardasha.
+   */
+  private getCurrentDasha(startDate: Date, currentDate: Date, startPlanet: string): any {
     const totalDays = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     let remainingDays = totalDays;
-    
-    let currentPlanet: string = DASHA_ORDER[0];
+    const orderFromStart = this.dashaOrderFrom(startPlanet);
+
+    let currentPlanet: string = orderFromStart[0];
     let currentStartDate = new Date(startDate);
 
-    // Find current mahadasha
-    for (const planet of DASHA_ORDER) {
+    for (const planet of orderFromStart) {
       const planetDuration = DASHA_DURATIONS[planet] * 365;
 
       if (remainingDays < planetDuration) {
         currentPlanet = planet;
         break;
       }
-      
       remainingDays -= planetDuration;
       currentStartDate = new Date(currentStartDate.getTime() + planetDuration * 24 * 60 * 60 * 1000);
     }
@@ -112,14 +131,13 @@ export class DashaService {
     let antardashaPlanet: string = DASHA_ORDER[0];
     let antardashaStartDate = new Date(mahadashaStartDate);
 
-    for (const planet of DASHA_ORDER) {
+    for (const planet of orderFromStart) {
       const antardashaDuration = Math.floor((mahadashaDuration * DASHA_DURATIONS[planet]) / 120);
 
       if (antardashaRemainingDays < antardashaDuration) {
         antardashaPlanet = planet;
         break;
       }
-      
       antardashaRemainingDays -= antardashaDuration;
       antardashaStartDate = new Date(antardashaStartDate.getTime() + antardashaDuration * 24 * 60 * 60 * 1000);
     }
@@ -138,43 +156,39 @@ export class DashaService {
     };
   }
 
-  private generateDashaTimeline(startDate: Date, currentDate: Date, years: number): DashaPeriod[] {
+  private generateDashaTimeline(startDate: Date, currentDate: Date, years: number, startPlanet: string): DashaPeriod[] {
     const timeline: DashaPeriod[] = [];
+    const orderFromStart = this.dashaOrderFrom(startPlanet);
     let currentStart = new Date(startDate);
     const endDate = new Date(currentDate);
     endDate.setFullYear(endDate.getFullYear() + years);
-    
-    // Find which mahadasha we're currently in
+
     let totalDays = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     let currentMahadashaIndex = 0;
     let mahadashaStart = new Date(startDate);
-    
-    for (let i = 0; i < DASHA_ORDER.length; i++) {
-      const planet = DASHA_ORDER[i];
+
+    for (let i = 0; i < orderFromStart.length; i++) {
+      const planet = orderFromStart[i];
       const planetDuration = DASHA_DURATIONS[planet] * 365;
-      
       if (totalDays < planetDuration) {
         currentMahadashaIndex = i;
         break;
       }
-      
       totalDays -= planetDuration;
       mahadashaStart = new Date(mahadashaStart.getTime() + planetDuration * 24 * 60 * 60 * 1000);
     }
-    
-    // Generate timeline starting from current mahadasha
+
     let mahadashaIndex = currentMahadashaIndex;
     let timelineStart = new Date(mahadashaStart);
-    
+
     while (timelineStart < endDate && timeline.length < 200) {
-      const mahadashaPlanet = DASHA_ORDER[mahadashaIndex % DASHA_ORDER.length];
+      const mahadashaPlanet = orderFromStart[mahadashaIndex % orderFromStart.length];
       const mahadashaDuration = DASHA_DURATIONS[mahadashaPlanet] * 365;
       const mahadashaEnd = new Date(timelineStart);
       mahadashaEnd.setDate(mahadashaEnd.getDate() + mahadashaDuration);
-      
-      // Generate antardashas for this mahadasha
+
       let antardashaStart = new Date(timelineStart);
-      for (const antardashaPlanet of DASHA_ORDER) {
+      for (const antardashaPlanet of orderFromStart) {
         const antardashaDuration = Math.floor((mahadashaDuration * DASHA_DURATIONS[antardashaPlanet]) / 120);
         const antardashaEnd = new Date(antardashaStart);
         antardashaEnd.setDate(antardashaEnd.getDate() + antardashaDuration);

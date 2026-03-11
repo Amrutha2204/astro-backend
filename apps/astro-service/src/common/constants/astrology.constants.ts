@@ -170,6 +170,23 @@ export const BENEFICIAL_PLANETS = ['jupiter', 'venus', 'mercury'] as const;
 /** Challenging planets for day-type scoring. */
 export const CHALLENGING_PLANETS = ['saturn', 'mars', 'rahu', 'ketu'] as const;
 
+/**
+ * Vedic divisional chart types (D-charts).
+ * Key = API value, value = { divisor, label }.
+ * D-1 = Lagna/Rasi, D-9 = Navamsa, etc.
+ */
+export const DIVISIONAL_CHARTS: Record<string, { divisor: number; label: string }> = {
+  lagna: { divisor: 1, label: 'Lagna (D-1)' },
+  navamsa: { divisor: 9, label: 'Navamsa (D-9)' },
+  saptamsa: { divisor: 7, label: 'Saptamsa (D-7)' },
+  dasamsa: { divisor: 10, label: 'Dasamsa (D-10)' },
+  dwadasamsa: { divisor: 12, label: 'Dwadasamsa (D-12)' },
+  shodasamsa: { divisor: 16, label: 'Shodasamsa (D-16)' },
+  vimsamsa: { divisor: 20, label: 'Vimsamsa (D-20)' },
+  chaturvimsamsa: { divisor: 24, label: 'Chaturvimsamsa (D-24)' },
+  trimsamsa: { divisor: 30, label: 'Trimsamsa (D-30)' },
+};
+
 /** House number (1–12) to life-area meaning for Kundli display. */
 export const HOUSE_MEANINGS: Record<number, string> = {
   1: 'Personality, Self',

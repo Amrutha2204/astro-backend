@@ -45,6 +45,50 @@ export class TransitsController {
     return this.transitsService.getTodayTransits();
   }
 
+  @Get('transits/retrogrades/on-date')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get which planets are retrograde on a single date (for "on this day" result)',
+  })
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    description: 'Date YYYY-MM-DD',
+    example: '2025-06-15',
+  })
+  @ApiQuery({
+    name: 'latitude',
+    required: false,
+    description: 'Observer latitude (default Delhi)',
+  })
+  @ApiQuery({
+    name: 'longitude',
+    required: false,
+    description: 'Observer longitude (default Delhi)',
+  })
+  @ApiOkResponse({ description: 'List of planet names that are retrograde on this date' })
+  async getRetrogradesOnDate(
+    @Query('date') date: string,
+    @Query('latitude') latitude?: string,
+    @Query('longitude') longitude?: string,
+  ) {
+    if (!date?.trim()) {
+      throw new HttpException(
+        'date is required (YYYY-MM-DD).',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const lat = latitude != null && latitude !== '' ? Number(latitude) : 28.6139;
+    const lng = longitude != null && longitude !== '' ? Number(longitude) : 77.209;
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      throw new HttpException(
+        'latitude and longitude must be valid numbers.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.transitsService.getRetrogradesOnDate(date.trim(), lat, lng);
+  }
+
   @Get('transits/retrogrades')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

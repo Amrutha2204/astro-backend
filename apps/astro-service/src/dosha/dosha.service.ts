@@ -6,6 +6,8 @@ import {
   SIGN_NUMBERS,
 } from '../common/constants/astrology.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
+import { getTimezoneOffsetFromLongitude } from '../common/utils/birth-time.util';
 import type { DoshaDetails } from './interfaces/dosha.interface';
 
 export type { DoshaDetails } from './interfaces/dosha.interface';
@@ -16,6 +18,7 @@ export class DoshaService {
 
   constructor(
     private readonly astrologyEngineService: AstrologyEngineService,
+    private readonly swissEphemerisService: SwissEphemerisService,
   ) {}
 
   async checkDoshas(
@@ -28,15 +31,22 @@ export class DoshaService {
     longitude: number,
   ): Promise<DoshaDetails> {
     try {
-      const vedicChart = await this.astrologyEngineService.calculateVedicChart({
+      const timezoneOffset = getTimezoneOffsetFromLongitude(longitude);
+      const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
         year,
         month,
         day,
         hour,
         minute,
-        latitude,
-        longitude,
-      });
+        0,
+        timezoneOffset,
+      );
+      const vedicChart =
+        await this.astrologyEngineService.calculateVedicChartFromJulianDay(
+          julianDayUt,
+          latitude,
+          longitude,
+        );
 
       const manglik = this.checkManglikDosha(vedicChart);
       const nadi = this.checkNadiDosha(vedicChart);

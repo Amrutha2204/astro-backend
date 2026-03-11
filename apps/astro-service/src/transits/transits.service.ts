@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
 
-/** Planets that go retrograde (exclude Sun, Moon – no retrograde). */
+/** Planets that go retrograde. Sun & Moon never retrograde; only these five (Vedic/Western standard). */
 const RETROGRADE_PLANETS = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
 
 /** Major transit planets (slow-moving, sign changes are significant). */
@@ -108,7 +108,7 @@ export class TransitsService {
     );
 
     const currentPlanetPositions: Record<string, any> = {};
-    const majorActiveTransits: Array<{ planet: string; sign: string }> = [];
+    const majorActiveTransits: Array<{ planet: string; sign: string; signDegree?: number }> = [];
 
     planets.forEach((planet) => {
       currentPlanetPositions[planet.planet.toLowerCase()] = {
@@ -119,6 +119,7 @@ export class TransitsService {
       majorActiveTransits.push({
         planet: planet.planet,
         sign: planet.sign,
+        signDegree: typeof planet.signDegree === 'number' ? planet.signDegree : undefined,
       });
     });
 
@@ -127,6 +128,47 @@ export class TransitsService {
       majorActiveTransits,
       date: dateStr,
       source: 'Swiss Ephemeris',
+    };
+  }
+
+  /**
+   * Get which planets are retrograde on a single date (noon UTC at location).
+   * Use this to show "on this day" results comparable to Astrosage.
+   */
+  async getRetrogradesOnDate(
+    dateStr: string,
+    latitude: number = 28.6139,
+    longitude: number = 77.209,
+  ): Promise<{ date: string; planetsRetrograde: string[] }> {
+    const date = this.parseDate(dateStr);
+    if (!date) {
+      throw new HttpException(
+        'Invalid date. Use YYYY-MM-DD.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+
+    const positions = await this.swissEphemerisService.calculatePlanetaryPositions(
+      y,
+      m,
+      d,
+      12,
+      0,
+      latitude,
+      longitude,
+    );
+
+    const planetsRetrograde = RETROGRADE_PLANETS.filter((planetName) => {
+      const planet = positions.find((p) => p.planet === planetName);
+      return planet != null && planet.speed < 0;
+    });
+
+    return {
+      date: dateStr,
+      planetsRetrograde,
     };
   }
 

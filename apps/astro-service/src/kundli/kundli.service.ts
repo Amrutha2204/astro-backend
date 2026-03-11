@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { KundliDto } from './dto/kundli.dto';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
-import { HOUSE_MEANINGS } from '../common/constants/astrology.constants';
+import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
+import { DIVISIONAL_CHARTS, HOUSE_MEANINGS } from '../common/constants/astrology.constants';
+import {
+  parseBirthDateTime,
+  getTimezoneOffsetFromLongitude,
+} from '../common/utils/birth-time.util';
 
 @Injectable()
 export class KundliService {
@@ -14,33 +19,49 @@ export class KundliService {
 
   constructor(
     private readonly astrologyEngineService: AstrologyEngineService,
+    private readonly swissEphemerisService: SwissEphemerisService,
   ) {}
 
   async getKundli(dto: KundliDto) {
     try {
-      const dobDate = new Date(`${dto.dob}T${dto.birthTime}`);
-      const year = dobDate.getFullYear();
-      const month = dobDate.getMonth() + 1;
-      const day = dobDate.getDate();
-      const hour = dobDate.getHours();
-      const minute = dobDate.getMinutes();
-
-      const vedicChart = await this.astrologyEngineService.calculateVedicChart(
-        {
-          year,
-          month,
-          day,
-          hour,
-          minute,
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-        },
+      const { year, month, day, hour, minute, second } = parseBirthDateTime(
+        dto.dob,
+        dto.birthTime,
       );
+      const timezoneOffset = getTimezoneOffsetFromLongitude(dto.longitude);
+      const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        timezoneOffset,
+      );
+
+      let vedicChart =
+        await this.astrologyEngineService.calculateVedicChartFromJulianDay(
+          julianDayUt,
+          dto.latitude,
+          dto.longitude,
+        );
+
+      let chartLabel = 'Lagna (D-1)';
+      const chartKey = (dto.chart || 'lagna').toLowerCase();
+      const divisional = DIVISIONAL_CHARTS[chartKey];
+      if (divisional && divisional.divisor > 1) {
+        vedicChart = this.astrologyEngineService.toDivisionalChart(vedicChart, divisional.divisor);
+        chartLabel = divisional.label;
+      } else if (chartKey && DIVISIONAL_CHARTS[chartKey]) {
+        chartLabel = DIVISIONAL_CHARTS[chartKey].label;
+      }
 
       const moonPlanet = vedicChart.planets.find((p) => p.planet === 'Moon');
       const sunPlanet = vedicChart.planets.find((p) => p.planet === 'Sun');
 
       return {
+        chart: chartKey,
+        chartLabel,
         lagna: vedicChart.lagna.sign,
         moonSign: vedicChart.moonSign.sign,
         sunSign: vedicChart.sunSign.sign,
@@ -54,6 +75,7 @@ export class KundliService {
           degree: p.degree,
           nakshatra: p.nakshatra,
           pada: p.pada,
+          retrograde: typeof p.speed === 'number' && p.speed < 0,
         })),
         houses: vedicChart.houses.map((h) => ({
           house: h.house,
@@ -79,22 +101,27 @@ export class KundliService {
   /** Western (tropical) chart in same shape as Vedic for frontend display. */
   async getWesternKundli(dto: KundliDto) {
     try {
-      const dobDate = new Date(`${dto.dob}T${dto.birthTime}`);
-      const year = dobDate.getFullYear();
-      const month = dobDate.getMonth() + 1;
-      const day = dobDate.getDate();
-      const hour = dobDate.getHours();
-      const minute = dobDate.getMinutes();
-
-      const westernChart = await this.astrologyEngineService.calculateWesternChart({
+      const { year, month, day, hour, minute, second } = parseBirthDateTime(
+        dto.dob,
+        dto.birthTime,
+      );
+      const timezoneOffset = getTimezoneOffsetFromLongitude(dto.longitude);
+      const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
         year,
         month,
         day,
         hour,
         minute,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-      });
+        second,
+        timezoneOffset,
+      );
+
+      const westernChart =
+        await this.astrologyEngineService.calculateWesternChartFromJulianDay(
+          julianDayUt,
+          dto.latitude,
+          dto.longitude,
+        );
 
       const moonPlanet = westernChart.planets?.find((p: any) => p.planet === 'Moon');
       const sunPlanet = westernChart.planets?.find((p: any) => p.planet === 'Sun');
@@ -102,6 +129,8 @@ export class KundliService {
       const degree = (p: any) => p.signDegree ?? p.degree ?? 0;
 
       return {
+        chart: 'western',
+        chartLabel: 'Western (Tropical)',
         lagna: ascendantSign,
         moonSign: moonPlanet?.sign || 'Unknown',
         sunSign: sunPlanet?.sign || 'Unknown',
@@ -115,6 +144,7 @@ export class KundliService {
           degree: degree(p),
           nakshatra: undefined,
           pada: undefined,
+          retrograde: typeof p.speed === 'number' && p.speed < 0,
         })),
         houses: (westernChart.houses || []).map((h: any) => ({
           house: h.house,

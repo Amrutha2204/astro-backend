@@ -22,6 +22,7 @@ import { GuestKundliRequestDto } from './dto/guest-kundli.dto';
 import {
   ChartType,
   getCoordinatesFromCity,
+  searchPlaces,
 } from '../common/utils/coordinates.util';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -30,6 +31,40 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @ApiTags('Kundli')
 export class KundliController {
   constructor(private readonly kundliService: KundliService) {}
+
+  @Get('places/search')
+  @ApiOperation({
+    summary: 'Search places for autocomplete (city, town, village). Fetches from OpenStreetMap; empty q returns default list.',
+  })
+  @ApiQuery({ name: 'q', required: false, description: 'Search query; empty returns default suggestions' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Max results (default 15)' })
+  @ApiOkResponse({ description: 'List of { displayName, lat, lng }' })
+  async getPlaceSearch(
+    @Query('q') q?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? Math.min(Math.max(1, parseInt(limit, 10)), 20) : 15;
+    const places = await searchPlaces(q ?? '', limitNum);
+    return { places };
+  }
+
+  @Get('geocode')
+  @ApiOperation({
+    summary: 'Resolve a place name (city, town, village) to coordinates. Used for birth place and compatibility.',
+  })
+  @ApiQuery({ name: 'place', required: true, description: 'Place name, e.g. "Mumbai, Maharashtra, India" or "Lonavala"' })
+  @ApiOkResponse({ description: 'Latitude, longitude, and optional display name' })
+  async geocode(@Query('place') place: string) {
+    if (!place?.trim()) {
+      throw new HttpException('place is required', HttpStatus.BAD_REQUEST);
+    }
+    const coordinates = await getCoordinatesFromCity(place.trim());
+    return {
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      displayName: place.trim(),
+    };
+  }
 
   @Post('guest')
   @HttpCode(HttpStatus.OK)
@@ -63,8 +98,12 @@ export class KundliController {
         latitude: coordinates.lat,
         longitude: coordinates.lng,
         chartType: ChartType.NorthIndian,
+        chart: dto.chart,
       };
 
+      if (dto.system === 'western') {
+        return this.kundliService.getWesternKundli(kundliDto);
+      }
       return this.kundliService.getKundli(kundliDto);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -98,6 +137,11 @@ export class KundliController {
     enum: ['vedic', 'western'],
     description: 'Astrology system: vedic (sidereal) or western (tropical). Default vedic.',
   })
+  @ApiQuery({
+    name: 'chart',
+    required: false,
+    description: 'Vedic chart: lagna (D-1), navamsa (D-9), saptamsa (D-7), dasamsa (D-10), dwadasamsa (D-12), shodasamsa (D-16), vimsamsa (D-20), chaturvimsamsa (D-24), trimsamsa (D-30). Ignored when system is western.',
+  })
   @ApiOkResponse({
     description: 'Kundli retrieved successfully',
     schema: {
@@ -115,6 +159,7 @@ export class KundliController {
     @CurrentUser() user: any,
     @Query('chartType') chartType?: ChartType,
     @Query('system') system?: 'vedic' | 'western',
+    @Query('chart') chart?: string,
   ) {
     const token = user.token;
     const authServiceUrl =
@@ -171,6 +216,7 @@ export class KundliController {
         latitude: coordinates.lat,
         longitude: coordinates.lng,
         chartType: chartType || ChartType.NorthIndian,
+        chart,
       };
 
       if (system === 'western') {

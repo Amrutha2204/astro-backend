@@ -72,21 +72,46 @@ export class HoroscopeRuleService {
     natalChart: any,
     transits: any,
   ): 'Good' | 'Neutral' | 'Challenging' {
-    const moonSign = natalChart.moonSign?.toLowerCase() || '';
-    const sunSign = natalChart.sunSign?.toLowerCase() || '';
-    const ascendant = natalChart.ascendant?.toLowerCase() || '';
-
     const majorTransits = transits.majorActiveTransits || [];
     let score = 0;
 
     majorTransits.forEach((transit: any) => {
-      const planet = transit.planet?.toLowerCase() || '';
+      const planet = (transit.planet || '').toString().toLowerCase();
       if ((BENEFICIAL_PLANETS as readonly string[]).includes(planet)) {
         score += 1;
       } else if ((CHALLENGING_PLANETS as readonly string[]).includes(planet)) {
         score -= 1;
       }
     });
+
+    const moonTransit = majorTransits.find(
+      (t: any) => (t.planet || '').toString().toLowerCase() === 'moon',
+    );
+    const moonSign = (moonTransit?.sign || '').toString().toLowerCase();
+    const natalMoon = (natalChart.moonSign || '').toString().toLowerCase();
+    if (moonSign && natalMoon) {
+      const sameSign = moonSign === natalMoon;
+      const friendlySigns: Record<string, string[]> = {
+        aries: ['leo', 'sagittarius'],
+        taurus: ['virgo', 'capricorn'],
+        gemini: ['libra', 'aquarius'],
+        cancer: ['scorpio', 'pisces'],
+        leo: ['aries', 'sagittarius'],
+        virgo: ['taurus', 'capricorn'],
+        libra: ['gemini', 'aquarius'],
+        scorpio: ['cancer', 'pisces'],
+        sagittarius: ['aries', 'leo'],
+        capricorn: ['taurus', 'virgo'],
+        aquarius: ['gemini', 'libra'],
+        pisces: ['cancer', 'scorpio'],
+      };
+      const friends = friendlySigns[natalMoon];
+      if (sameSign) {
+        score += 2;
+      } else if (friends && friends.includes(moonSign)) {
+        score += 1;
+      }
+    }
 
     if (score > 0) {
       return 'Good';
@@ -101,26 +126,39 @@ export class HoroscopeRuleService {
     natalChart: any,
     transits: any,
   ): string {
+    const majorTransits = transits.majorActiveTransits || [];
+    const moonTransit = majorTransits.find(
+      (t: any) => (t.planet || '').toString().toLowerCase() === 'moon',
+    );
+    const moonInSign = moonTransit?.sign ? ` Moon in ${moonTransit.sign}.` : '';
     if (dayType === 'Good') {
-      return 'Focus on opportunities and growth';
+      return `Focus on opportunities and growth.${moonInSign}`;
     } else if (dayType === 'Challenging') {
-      return 'Exercise caution and patience';
+      return `Exercise caution and patience.${moonInSign}`;
     }
-    return 'Reflection and balance';
+    return `Reflection and balance.${moonInSign}`;
   }
 
   private getReason(natalChart: any, transits: any, dateStr?: string): string {
     const majorTransits = transits.majorActiveTransits || [];
-    const transitPlanets = majorTransits
-      .map((t: any) => t.planet)
+    const positions = majorTransits
+      .map((t: any) => {
+        if (!t.planet || !t.sign) return t.planet || '';
+        const deg =
+          typeof t.signDegree === 'number' && !Number.isNaN(t.signDegree)
+            ? ` ${Number(t.signDegree).toFixed(1)}°`
+            : '';
+        return `${t.planet}${deg} in ${t.sign}`;
+      })
+      .filter(Boolean)
       .join(', ');
 
     const ascendantText = natalChart.ascendant
       ? `${natalChart.ascendant} Ascendant`
       : 'your birth chart';
 
-    const dayLabel = dateStr ? `Planetary positions for ${dateStr}` : "Today's planetary positions";
-    return `${dayLabel} (${transitPlanets || 'current transits'}) influence your ${natalChart.moonSign} Moon sign and ${ascendantText}`;
+    const dayLabel = dateStr ? `Transits for ${dateStr}` : "Today's transits";
+    return `${dayLabel}: ${positions || 'planetary positions'} influence your ${natalChart.moonSign} Moon sign and ${ascendantText}`;
   }
 
   /** Do / Avoid and Good time — directive lines for India MVP. */

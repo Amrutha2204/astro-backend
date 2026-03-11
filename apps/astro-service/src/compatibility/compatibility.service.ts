@@ -16,6 +16,8 @@ import {
   YONI_MAP,
 } from '../common/constants/compatibility.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
+import { getTimezoneOffsetFromLongitude } from '../common/utils/birth-time.util';
 import { DoshaService } from '../dosha/dosha.service';
 import type { CompatibilityResult, GunaMilanResult } from './interfaces/compatibility.interface';
 
@@ -27,8 +29,35 @@ export class CompatibilityService {
 
   constructor(
     private readonly astrologyEngineService: AstrologyEngineService,
+    private readonly swissEphemerisService: SwissEphemerisService,
     private readonly doshaService: DoshaService,
   ) {}
+
+  private async getVedicChartFromBirth(
+    year: number,
+    month: number,
+    day: number,
+    hour: number,
+    minute: number,
+    latitude: number,
+    longitude: number,
+  ) {
+    const timezoneOffset = getTimezoneOffsetFromLongitude(longitude);
+    const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      0,
+      timezoneOffset,
+    );
+    return this.astrologyEngineService.calculateVedicChartFromJulianDay(
+      julianDayUt,
+      latitude,
+      longitude,
+    );
+  }
 
   async calculateGunaMilan(
     chart1: any,
@@ -47,25 +76,25 @@ export class CompatibilityService {
         throw new Error('Partner2 birth details incomplete. Year, month, and day are required.');
       }
 
-      const vedicChart1 = await this.astrologyEngineService.calculateVedicChart({
-        year: chart1.year,
-        month: chart1.month,
-        day: chart1.day,
-        hour: chart1.hour || 12,
-        minute: chart1.minute || 0,
-        latitude: chart1.latitude,
-        longitude: chart1.longitude,
-      });
+      const vedicChart1 = await this.getVedicChartFromBirth(
+        chart1.year,
+        chart1.month,
+        chart1.day,
+        chart1.hour || 12,
+        chart1.minute || 0,
+        chart1.latitude,
+        chart1.longitude,
+      );
 
-      const vedicChart2 = await this.astrologyEngineService.calculateVedicChart({
-        year: chart2.year,
-        month: chart2.month,
-        day: chart2.day,
-        hour: chart2.hour || 12,
-        minute: chart2.minute || 0,
-        latitude: chart2.latitude,
-        longitude: chart2.longitude,
-      });
+      const vedicChart2 = await this.getVedicChartFromBirth(
+        chart2.year,
+        chart2.month,
+        chart2.day,
+        chart2.hour || 12,
+        chart2.minute || 0,
+        chart2.latitude,
+        chart2.longitude,
+      );
 
       const gunas = [
         this.calculateVarna(vedicChart1, vedicChart2),
@@ -117,26 +146,26 @@ export class CompatibilityService {
   ): Promise<CompatibilityResult> {
     try {
       const gunaMilan = await this.calculateGunaMilan(chart1, chart2);
-      
-      const vedicChart1 = await this.astrologyEngineService.calculateVedicChart({
-        year: chart1.year,
-        month: chart1.month,
-        day: chart1.day,
-        hour: chart1.hour || 12,
-        minute: chart1.minute || 0,
-        latitude: chart1.latitude,
-        longitude: chart1.longitude,
-      });
 
-      const vedicChart2 = await this.astrologyEngineService.calculateVedicChart({
-        year: chart2.year,
-        month: chart2.month,
-        day: chart2.day,
-        hour: chart2.hour || 12,
-        minute: chart2.minute || 0,
-        latitude: chart2.latitude,
-        longitude: chart2.longitude,
-      });
+      const vedicChart1 = await this.getVedicChartFromBirth(
+        chart1.year,
+        chart1.month,
+        chart1.day,
+        chart1.hour || 12,
+        chart1.minute || 0,
+        chart1.latitude,
+        chart1.longitude,
+      );
+
+      const vedicChart2 = await this.getVedicChartFromBirth(
+        chart2.year,
+        chart2.month,
+        chart2.day,
+        chart2.hour || 12,
+        chart2.minute || 0,
+        chart2.latitude,
+        chart2.longitude,
+      );
       
       const doshaCompatibility = await this.doshaService.checkCompatibilityDoshas(
         vedicChart1,
