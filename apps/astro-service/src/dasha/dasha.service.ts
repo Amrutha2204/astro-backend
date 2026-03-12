@@ -81,21 +81,22 @@ export class DashaService {
     return [...order.slice(i), ...order.slice(0, i)];
   }
 
+  /**
+   * Start date of the mahadasha running at birth (Vimshottari).
+   * Balance of dasha at birth = (1 - nakshatraProgress) * totalDashaYears; elapsed = totalDashaYears - balance.
+   */
   private calculateDashaStartDate(
     birthDate: Date,
     moonLongitude: number,
     startPlanet: string,
   ): Date {
-    const nakshatraStartLongitude = Math.floor(moonLongitude / (360 / 27)) * (360 / 27);
     const nakshatraProgress = (moonLongitude % (360 / 27)) / (360 / 27);
-    
-    const planetIndex = (DASHA_ORDER as readonly string[]).indexOf(startPlanet);
     const totalDashaYears = DASHA_DURATIONS[startPlanet];
     const elapsedYears = totalDashaYears * nakshatraProgress;
-    
+
     const startDate = new Date(birthDate);
     startDate.setFullYear(startDate.getFullYear() - elapsedYears);
-    
+
     return startDate;
   }
 

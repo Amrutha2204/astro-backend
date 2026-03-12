@@ -146,8 +146,8 @@ export const SIGN_NUMBERS: Record<string, number> = {
 /** Manglik dosha: Mars in these signs indicates dosha. */
 export const MANGLIK_SIGNS = ['aries', 'scorpio', 'capricorn'] as const;
 
-/** Manglik dosha: Mars in these houses indicates dosha. */
-export const MANGLIK_HOUSES = [1, 4, 7, 8, 12] as const;
+/** Manglik dosha: Mars in these houses (from Lagna or from Moon/Chandra) indicates dosha. */
+export const MANGLIK_HOUSES = [1, 2, 4, 7, 8, 12] as const;
 
 /** Vimshottari Dasha planet order. */
 export const DASHA_ORDER = [
@@ -201,4 +201,20 @@ export const HOUSE_MEANINGS: Record<number, string> = {
   10: 'Career, Reputation',
   11: 'Network, Friends',
   12: 'Spirituality, Isolation',
+};
+
+/** House number (1–12) to detailed meaning for Kundli (aligns with Astrosage/Horocosmo). */
+export const HOUSE_MEANINGS_DETAIL: Record<number, string> = {
+  1: 'First House (Lagna): Self, body, personality, appearance, and overall vitality. Represents the native’s identity and how they are perceived.',
+  2: 'Second House: Wealth, family, speech, food, and accumulated assets. Indicates earning capacity and family bonds.',
+  3: 'Third House: Courage, siblings, short travels, communication, and hands. Represents determination and mental strength.',
+  4: 'Fourth House: Home, mother, comfort, property, and emotional security. Indicates happiness from domestic life.',
+  5: 'Fifth House: Education, creativity, children, intelligence, and speculation. Represents romance and past-life merits.',
+  6: 'Sixth House: Health, diseases, enemies, service, and daily routine. Indicates obstacles and how one overcomes them.',
+  7: 'Seventh House: Marriage, spouse, partnerships, and business relations. The house of significant others and open enemies.',
+  8: 'Eighth House: Longevity, transformation, occult, inheritance, and sudden events. Represents mysteries and regeneration.',
+  9: 'Ninth House: Luck, father, higher education, spirituality, and long travels. The house of dharma and wisdom.',
+  10: 'Tenth House: Career, authority, reputation, and relationship with the mother. Represents status and public life.',
+  11: 'Eleventh House: Gains, friends, network, and fulfillment of desires. Indicates income and social circle.',
+  12: 'Twelfth House: Losses, spirituality, isolation, foreign lands, and liberation. Represents expenses and inner growth.',
 };

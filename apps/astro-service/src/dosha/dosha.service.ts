@@ -82,8 +82,19 @@ export class DoshaService {
     const hasSignDosha = (MANGLIK_SIGNS as readonly string[]).includes(marsSign);
     const marsHouse = this.getPlanetHouse(marsLongitude, chart.houses);
     const hasHouseDosha = marsHouse != null && (MANGLIK_HOUSES as readonly number[]).includes(marsHouse);
+
+    // Chandra (Moon) chart: Mars in 1,2,4,7,8,12 from Moon also indicates Mangal dosha (as per Lagna + Chandra practice).
+    const moonPlanet = chart.planets.find((p: any) => p.planet === 'Moon');
+    let hasChandraHouseDosha = false;
+    if (moonPlanet && moonPlanet.sign) {
+      const moonSign = moonPlanet.sign.toLowerCase();
+      const marsHouseFromMoon = this.getHouseFromSign(marsSign, moonSign);
+      if (marsHouseFromMoon != null && (MANGLIK_HOUSES as readonly number[]).includes(marsHouseFromMoon)) {
+        hasChandraHouseDosha = true;
+      }
+    }
     
-    const hasDosha = hasSignDosha || hasHouseDosha;
+    const hasDosha = hasSignDosha || hasHouseDosha || hasChandraHouseDosha;
 
     let severity: 'High' | 'Medium' | 'Low' | 'None' = 'None';
     let description = '';
@@ -102,10 +113,13 @@ export class DoshaService {
         reasons.push(`Mars is in ${marsPlanet.sign} sign`);
       }
       if (hasHouseDosha) {
-        reasons.push(`Mars is in ${marsHouse}th house`);
+        reasons.push(`Mars is in ${marsHouse}th house (Lagna chart)`);
+      }
+      if (hasChandraHouseDosha) {
+        reasons.push('Mars in an inauspicious house in Chandra (Moon) chart');
       }
       
-      description = `Manglik dosha present. ${reasons.join(' and ')}.`;
+      description = `Manglik dosha present. ${reasons.join('; ')}.`;
     } else {
       description = 'The person is not Manglik.';
     }
@@ -169,6 +183,14 @@ export class DoshaService {
     }
     
     return null;
+  }
+
+  /** House (1–12) of a planet by sign when reference (e.g. Moon) is the 1st house (Chandra chart). */
+  private getHouseFromSign(planetSign: string, referenceSign: string): number | null {
+    const p = SIGN_NUMBERS[planetSign] ?? SIGN_NUMBERS[planetSign.toLowerCase()];
+    const r = SIGN_NUMBERS[referenceSign] ?? SIGN_NUMBERS[referenceSign.toLowerCase()];
+    if (p == null || r == null) return null;
+    return ((p - r + 12) % 12) + 1;
   }
 
   private checkNadiDosha(chart: any): any {
