@@ -20,11 +20,15 @@ import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { GuestKundliRequestDto } from '../kundli/dto/guest-kundli.dto';
+import { AuthClientService } from '../common/services/auth-client.service';
 
 @Controller('api/v1/dosha')
 @ApiTags('Dosha')
 export class DoshaController {
-  constructor(private readonly doshaService: DoshaService) {}
+  constructor(
+    private readonly doshaService: DoshaService,
+    private readonly authClient: AuthClientService,
+  ) {}
 
   @Post('guest')
   @HttpCode(HttpStatus.OK)
@@ -67,29 +71,9 @@ export class DoshaController {
   })
   async checkDoshas(@CurrentUser() user: any) {
     const token = user.token;
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
     try {
-      const userDetailsResponse = await fetch(
-        `${authServiceUrl}/api/v1/user-details/me`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        },
-      );
-
-      if (!userDetailsResponse.ok) {
-        throw new HttpException(
-          'Failed to fetch user details.',
-          userDetailsResponse.status,
-        );
-      }
-
-      const userDetails = await userDetailsResponse.json();
+      const userDetails = await this.authClient.getMe(token);
 
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException(
@@ -140,29 +124,9 @@ export class DoshaController {
   })
   async checkManglik(@CurrentUser() user: any) {
     const token = user.token;
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
     try {
-      const userDetailsResponse = await fetch(
-        `${authServiceUrl}/api/v1/user-details/me`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        },
-      );
-
-      if (!userDetailsResponse.ok) {
-        throw new HttpException(
-          'Failed to fetch user details.',
-          userDetailsResponse.status,
-        );
-      }
-
-      const userDetails = await userDetailsResponse.json();
+      const userDetails = await this.authClient.getMe(token);
 
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException(

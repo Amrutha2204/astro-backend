@@ -1,12 +1,15 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Param,
   HttpCode,
   HttpStatus,
   UseGuards,
   Request,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -56,13 +59,7 @@ export class UserDetailsController {
   })
   async getMyDetails(@Request() req: any) {
     const user = req.user;
-    const userDetails = await this.userDetailsService.findByUserId(user.id);
-
-    if (!userDetails) {
-      throw new NotFoundException('User details not found');
-    }
-
-    return userDetails;
+    return this.userDetailsService.getMeOrEmpty(user.id);
   }
 
   @Get('internal/:userId')
@@ -82,6 +79,38 @@ export class UserDetailsController {
       birthPlace: userDetails.birthPlace,
       birthTime: userDetails.birthTime ?? '12:00:00',
     };
+  }
+
+  @Post('birth-details')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create or update birth details for the authenticated user' })
+  @ApiOkResponse({ description: 'Birth details saved successfully' })
+  async saveBirthDetails(@Request() req: any, @Body() body: { dob?: string; birthTime?: string; placeOfBirth?: string }) {
+    const user = req.user;
+    const birthPlace = body.placeOfBirth?.trim();
+    if (!birthPlace) {
+      throw new BadRequestException('Birth place is required');
+    }
+    const dobRaw = body.dob?.trim();
+    if (!dobRaw) {
+      throw new BadRequestException('Date of birth is required');
+    }
+    const dob = this.normalizeDob(dobRaw);
+    const updated = await this.userDetailsService.upsertBirthDetails(user.id, {
+      dob,
+      birthPlace,
+      birthTime: body.birthTime?.trim() || undefined,
+    });
+    return updated;
+  }
+
+  private normalizeDob(value: string): string {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const m = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    return value;
   }
 }
 

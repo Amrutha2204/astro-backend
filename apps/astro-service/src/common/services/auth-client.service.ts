@@ -37,7 +37,14 @@ export class AuthClientService {
       }
       throw new HttpException('Failed to fetch user details.', res.status);
     }
-    return res.json();
+    const body = await res.json();
+    const raw = body?.data != null ? body.data : body;
+    return {
+      dob: raw?.dob ?? undefined,
+      birthPlace: raw?.birthPlace ?? undefined,
+      birthTime: raw?.birthTime ?? undefined,
+      ...raw,
+    };
   }
 
   async getByUserIdInternal(userId: string): Promise<{ dob: string; birthPlace: string; birthTime: string }> {

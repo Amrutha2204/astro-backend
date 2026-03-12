@@ -18,11 +18,15 @@ import { CalendarService } from './calendar.service';
 import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { AuthClientService } from '../common/services/auth-client.service';
 
 @Controller('api/v1/astrology')
 @ApiTags('Astrology')
 export class CalendarController {
-  constructor(private readonly calendarService: CalendarService) {}
+  constructor(
+    private readonly calendarService: CalendarService,
+    private readonly authClient: AuthClientService,
+  ) {}
 
   @Get('calendar/today/guest')
   @HttpCode(HttpStatus.OK)
@@ -156,41 +160,9 @@ export class CalendarController {
   })
   async getTodayCalendar(@CurrentUser() user: any) {
     const token = user.token;
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
     try {
-      const userDetailsResponse = await fetch(
-        `${authServiceUrl}/api/v1/user-details/me`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        },
-      );
-
-      if (!userDetailsResponse.ok) {
-        if (userDetailsResponse.status === 401) {
-          throw new HttpException(
-            'Invalid or expired token. Please login again.',
-            HttpStatus.UNAUTHORIZED,
-          );
-        }
-        if (userDetailsResponse.status === 404) {
-          throw new HttpException(
-            'Birth details not found. Please complete your profile first.',
-            HttpStatus.NOT_FOUND,
-          );
-        }
-        throw new HttpException(
-          'Failed to fetch user details.',
-          userDetailsResponse.status,
-        );
-      }
-
-      const userDetails = await userDetailsResponse.json();
+      const userDetails = await this.authClient.getMe(token);
 
       if (!userDetails.birthPlace) {
         throw new HttpException(
