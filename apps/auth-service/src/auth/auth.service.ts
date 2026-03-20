@@ -14,6 +14,7 @@ import { UserDetails } from '../entities/user-details.entity';
 import { User } from '../entities/user.entity';
 import { UserDetailsService } from '../user-details/user-details.service';
 import { UsersService } from '../users/users.service';
+import { SessionsService } from '../sessions/sessions.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly dataSource: DataSource,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   async signup(dto: SignUpDto) {
@@ -53,12 +55,13 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    const user = await this.usersService.findByEmail(normalizedEmail);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(dto.password.trim(), user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -73,14 +76,59 @@ export class AuthService {
         '1h') as JwtSignOptions['expiresIn'];
     const accessToken = await this.jwtService.signAsync(payload, { expiresIn });
 
+    const expiresInString = typeof expiresIn === 'string' ? expiresIn : `${expiresIn}s`;
+    await this.sessionsService.createSession(user.id, accessToken, expiresInString);
+
+    const expiresInSeconds = this.parseExpiresIn(expiresInString);
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+
     return {
       accessToken,
+      expiresAt: expiresAt.toISOString(),
+      expiresIn: expiresInString,
       user: {
         id: user.id,
         name: user.name,
         roleId: user.roleId,
       },
     };
+  }
+
+  async logout(token: string): Promise<{ message: string }> {
+    if (token) {
+      await this.sessionsService.deleteSession(token);
+    }
+
+    return {
+      message: 'Logged out successfully. Session deleted.',
+    };
+  }
+
+  private parseExpiresIn(expiresIn: string | number): number {
+    if (typeof expiresIn === 'number') {
+      return expiresIn;
+    }
+
+    const match = expiresIn.match(/^(\d+)([smhd])$/);
+    if (!match) {
+      return 3600; // Default 1 hour
+    }
+
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+
+    switch (unit) {
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 3600;
+      case 'd':
+        return value * 86400;
+      default:
+        return 3600;
+    }
   }
 
   async validateUser(userId: string) {
