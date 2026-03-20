@@ -146,8 +146,8 @@ export const SIGN_NUMBERS: Record<string, number> = {
 /** Manglik dosha: Mars in these signs indicates dosha. */
 export const MANGLIK_SIGNS = ['aries', 'scorpio', 'capricorn'] as const;
 
-/** Manglik dosha: Mars in these houses indicates dosha. */
-export const MANGLIK_HOUSES = [1, 4, 7, 8, 12] as const;
+/** Manglik dosha: Mars in these houses (from Lagna or from Moon/Chandra) indicates dosha. */
+export const MANGLIK_HOUSES = [1, 2, 4, 7, 8, 12] as const;
 
 /** Vimshottari Dasha planet order. */
 export const DASHA_ORDER = [
@@ -169,3 +169,52 @@ export const BENEFICIAL_PLANETS = ['jupiter', 'venus', 'mercury'] as const;
 
 /** Challenging planets for day-type scoring. */
 export const CHALLENGING_PLANETS = ['saturn', 'mars', 'rahu', 'ketu'] as const;
+
+/**
+ * Vedic divisional chart types (D-charts).
+ * Key = API value, value = { divisor, label }.
+ * D-1 = Lagna/Rasi, D-9 = Navamsa, etc.
+ */
+export const DIVISIONAL_CHARTS: Record<string, { divisor: number; label: string }> = {
+  lagna: { divisor: 1, label: 'Lagna (D-1)' },
+  navamsa: { divisor: 9, label: 'Navamsa (D-9)' },
+  saptamsa: { divisor: 7, label: 'Saptamsa (D-7)' },
+  dasamsa: { divisor: 10, label: 'Dasamsa (D-10)' },
+  dwadasamsa: { divisor: 12, label: 'Dwadasamsa (D-12)' },
+  shodasamsa: { divisor: 16, label: 'Shodasamsa (D-16)' },
+  vimsamsa: { divisor: 20, label: 'Vimsamsa (D-20)' },
+  chaturvimsamsa: { divisor: 24, label: 'Chaturvimsamsa (D-24)' },
+  trimsamsa: { divisor: 30, label: 'Trimsamsa (D-30)' },
+};
+
+/** House number (1–12) to life-area meaning for Kundli display. */
+export const HOUSE_MEANINGS: Record<number, string> = {
+  1: 'Personality, Self',
+  2: 'Money, Speech',
+  3: 'Courage, Communication',
+  4: 'Home, Family',
+  5: 'Education, Creativity',
+  6: 'Health, Enemies',
+  7: 'Marriage, Relationships',
+  8: 'Transformation',
+  9: 'Luck, Wisdom',
+  10: 'Career, Reputation',
+  11: 'Network, Friends',
+  12: 'Spirituality, Isolation',
+};
+
+/** House number (1–12) to detailed meaning for Kundli (aligns with Astrosage/Horocosmo). */
+export const HOUSE_MEANINGS_DETAIL: Record<number, string> = {
+  1: 'First House (Lagna): Self, body, personality, appearance, and overall vitality. Represents the native’s identity and how they are perceived.',
+  2: 'Second House: Wealth, family, speech, food, and accumulated assets. Indicates earning capacity and family bonds.',
+  3: 'Third House: Courage, siblings, short travels, communication, and hands. Represents determination and mental strength.',
+  4: 'Fourth House: Home, mother, comfort, property, and emotional security. Indicates happiness from domestic life.',
+  5: 'Fifth House: Education, creativity, children, intelligence, and speculation. Represents romance and past-life merits.',
+  6: 'Sixth House: Health, diseases, enemies, service, and daily routine. Indicates obstacles and how one overcomes them.',
+  7: 'Seventh House: Marriage, spouse, partnerships, and business relations. The house of significant others and open enemies.',
+  8: 'Eighth House: Longevity, transformation, occult, inheritance, and sudden events. Represents mysteries and regeneration.',
+  9: 'Ninth House: Luck, father, higher education, spirituality, and long travels. The house of dharma and wisdom.',
+  10: 'Tenth House: Career, authority, reputation, and relationship with the mother. Represents status and public life.',
+  11: 'Eleventh House: Gains, friends, network, and fulfillment of desires. Indicates income and social circle.',
+  12: 'Twelfth House: Losses, spirituality, isolation, foreign lands, and liberation. Represents expenses and inner growth.',
+};

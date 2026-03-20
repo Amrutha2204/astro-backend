@@ -1,247 +1,118 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { ExecutionContext, HttpException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { Buffer } from 'buffer';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
-  let mockExecutionContext: ExecutionContext;
+  let jwtService: JwtService;
+
+  const createMockContext = (headers: Record<string, string>): ExecutionContext =>
+    ({
+      switchToHttp: () => ({
+        getRequest: () => ({ headers }),
+      }),
+    }) as ExecutionContext;
 
   beforeEach(async () => {
+    const mockJwtService = {
+      verifyAsync: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [JwtAuthGuard],
+      providers: [
+        JwtAuthGuard,
+        { provide: JwtService, useValue: mockJwtService },
+      ],
     }).compile();
 
     guard = module.get<JwtAuthGuard>(JwtAuthGuard);
+    jwtService = module.get<JwtService>(JwtService);
   });
 
-  const createMockContext = (headers: any): ExecutionContext => {
-    return {
-      switchToHttp: () => ({
-        getRequest: () => ({
-          headers,
-        }),
-      }),
-    } as ExecutionContext;
-  };
-
-  const createValidToken = (userId: string, exp?: number): string => {
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-    const payload = Buffer.from(
-      JSON.stringify({
-        sub: userId,
-        id: userId,
-        exp: exp || Math.floor(Date.now() / 1000) + 3600,
-        iat: Math.floor(Date.now() / 1000),
-      }),
-    ).toString('base64');
-    const signature = 'test-signature';
-    return `${header}.${payload}.${signature}`;
-  };
-
   describe('canActivate', () => {
-    it('should return true for valid token', () => {
-      const validToken = createValidToken('test-user-id');
+    it('should return true and set user when token is valid', async () => {
+      (jwtService.verifyAsync as jest.Mock).mockResolvedValue({
+        sub: 'test-user-id',
+        roleId: 1,
+      });
       const context = createMockContext({
-        authorization: `Bearer ${validToken}`,
+        authorization: 'Bearer valid.jwt.token',
       });
 
-      const result = guard.canActivate(context);
+      const result = await guard.canActivate(context);
 
       expect(result).toBe(true);
       const request = context.switchToHttp().getRequest();
       expect(request.user).toEqual({
         userId: 'test-user-id',
-        token: validToken,
+        token: 'valid.jwt.token',
+        roleId: 1,
       });
     });
 
-    it('should throw HttpException when authorization header is missing', () => {
+    it('should throw when authorization header is missing', async () => {
       const context = createMockContext({});
 
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow(
+      await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
         'Authentication required. Please provide a valid JWT token.',
+      );
+      expect(jwtService.verifyAsync).not.toHaveBeenCalled();
+    });
+
+    it('should throw when authorization does not start with Bearer', async () => {
+      const context = createMockContext({ authorization: 'Basic xyz' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
+      expect(jwtService.verifyAsync).not.toHaveBeenCalled();
+    });
+
+    it('should throw when token is empty', async () => {
+      const context = createMockContext({ authorization: 'Bearer ' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
+      await expect(guard.canActivate(context)).rejects.toThrow('Token is missing');
+    });
+
+    it('should throw when verifyAsync throws (expired)', async () => {
+      const err = new Error('jwt expired');
+      (err as any).name = 'TokenExpiredError';
+      (jwtService.verifyAsync as jest.Mock).mockRejectedValue(err);
+      const context = createMockContext({ authorization: 'Bearer expired.token' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        'Token has expired. Please login again.',
       );
     });
 
-    it('should throw HttpException when authorization header does not start with Bearer', () => {
-      const context = createMockContext({
-        authorization: 'Invalid token',
-      });
+    it('should throw when verifyAsync throws (invalid)', async () => {
+      (jwtService.verifyAsync as jest.Mock).mockRejectedValue(new Error('invalid signature'));
+      const context = createMockContext({ authorization: 'Bearer bad.token' });
 
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow(
-        'Authentication required. Please provide a valid JWT token.',
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
     });
 
-    it('should throw HttpException when token is empty', () => {
-      const context = createMockContext({
-        authorization: 'Bearer ',
+    it('should use id when sub is missing', async () => {
+      (jwtService.verifyAsync as jest.Mock).mockResolvedValue({
+        id: 'user-from-id',
+        roleId: 2,
       });
+      const context = createMockContext({ authorization: 'Bearer jwt.here' });
 
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Token is missing');
-    });
-
-    it('should throw HttpException when token has invalid format (not 3 parts)', () => {
-      const context = createMockContext({
-        authorization: 'Bearer invalid.token',
-      });
-
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Invalid token format');
-    });
-
-    it('should throw HttpException when token does not contain user ID', () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-      const payload = Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64');
-      const invalidToken = `${header}.${payload}.signature`;
-
-      const context = createMockContext({
-        authorization: `Bearer ${invalidToken}`,
-      });
-
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Token does not contain user ID');
-    });
-
-    it('should throw HttpException when token is expired', () => {
-      const expiredToken = createValidToken('test-user-id', Math.floor(Date.now() / 1000) - 3600);
-      const context = createMockContext({
-        authorization: `Bearer ${expiredToken}`,
-      });
-
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Token has expired. Please login again.');
-    });
-
-    it('should accept token with id field instead of sub', () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-      const payload = Buffer.from(
-        JSON.stringify({
-          id: 'user-id-from-id-field',
-          exp: Math.floor(Date.now() / 1000) + 3600,
-        }),
-      ).toString('base64');
-      const tokenWithId = `${header}.${payload}.signature`;
-
-      const context = createMockContext({
-        authorization: `Bearer ${tokenWithId}`,
-      });
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-      const request = context.switchToHttp().getRequest();
-      expect(request.user.userId).toBe('user-id-from-id-field');
-    });
-
-    it('should handle token without expiration claim', () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-      const payload = Buffer.from(JSON.stringify({ sub: 'test-user-id' })).toString('base64');
-      const tokenWithoutExp = `${header}.${payload}.signature`;
-
-      const context = createMockContext({
-        authorization: `Bearer ${tokenWithoutExp}`,
-      });
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-      const request = context.switchToHttp().getRequest();
-      expect(request.user.userId).toBe('test-user-id');
-    });
-
-    it('should throw HttpException when token payload is invalid base64', () => {
-      const invalidToken = 'header.invalid-base64-payload.signature';
-
-      const context = createMockContext({
-        authorization: `Bearer ${invalidToken}`,
-      });
-
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Invalid token format');
-    });
-
-    it('should throw HttpException when token payload is invalid JSON', () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-      const invalidJsonPayload = Buffer.from('not-valid-json').toString('base64');
-      const invalidToken = `${header}.${invalidJsonPayload}.signature`;
-
-      const context = createMockContext({
-        authorization: `Bearer ${invalidToken}`,
-      });
-
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Invalid token format');
-    });
-
-    it('should extract token correctly from Bearer header', () => {
-      const validToken = createValidToken('test-user-id');
-      const context = createMockContext({
-        authorization: `Bearer ${validToken}`,
-      });
-
-      guard.canActivate(context);
+      await guard.canActivate(context);
 
       const request = context.switchToHttp().getRequest();
-      expect(request.user.token).toBe(validToken);
+      expect(request.user.userId).toBe('user-from-id');
     });
 
-    it('should set user object with userId and token', () => {
-      const validToken = createValidToken('test-user-123');
-      const context = createMockContext({
-        authorization: `Bearer ${validToken}`,
-      });
+    it('should throw when payload has no sub or id', async () => {
+      (jwtService.verifyAsync as jest.Mock).mockResolvedValue({ roleId: 1 });
 
-      guard.canActivate(context);
+      const context = createMockContext({ authorization: 'Bearer jwt.here' });
 
-      const request = context.switchToHttp().getRequest();
-      expect(request.user).toEqual({
-        userId: 'test-user-123',
-        token: validToken,
-      });
-    });
-
-    it('should handle token with whitespace', () => {
-      const validToken = createValidToken('test-user-id');
-      const context = createMockContext({
-        authorization: `Bearer   ${validToken}   `,
-      });
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-      const request = context.switchToHttp().getRequest();
-      expect(request.user.userId).toBe('test-user-id');
-    });
-  });
-
-  describe('validateToken (private method via canActivate)', () => {
-    it('should validate token with future expiration', () => {
-      const futureExp = Math.floor(Date.now() / 1000) + 7200;
-      const validToken = createValidToken('test-user-id', futureExp);
-      const context = createMockContext({
-        authorization: `Bearer ${validToken}`,
-      });
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-    });
-
-    it('should reject token expired exactly now', () => {
-      const nowExp = Math.floor(Date.now() / 1000);
-      const expiredToken = createValidToken('test-user-id', nowExp);
-      const context = createMockContext({
-        authorization: `Bearer ${expiredToken}`,
-      });
-
-      expect(() => guard.canActivate(context)).toThrow(HttpException);
-      expect(() => guard.canActivate(context)).toThrow('Token has expired');
+      await expect(guard.canActivate(context)).rejects.toThrow(HttpException);
+      await expect(guard.canActivate(context)).rejects.toThrow('Invalid token: missing user id');
     });
   });
 });
-

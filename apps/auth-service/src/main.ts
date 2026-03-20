@@ -30,6 +30,14 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') ?? 8001;
 
+  if (process.env.NODE_ENV === 'production') {
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+    if (!jwtSecret || jwtSecret.trim() === '') {
+      nestLogger.error('JWT_SECRET is required in production. Set it in .env and restart.');
+      process.exit(1);
+    }
+  }
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Auth Service API')
     .setDescription('API documentation for authentication and guest onboarding')

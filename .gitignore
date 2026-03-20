@@ -24,6 +24,10 @@ node_modules
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# generated card images/PDFs
+uploads
+**/uploads
+
 # misc
 /.sass-cache
 /connect.lock

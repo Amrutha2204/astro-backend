@@ -6,6 +6,11 @@ import {
 } from '@nestjs/common';
 import { KundliDto } from '../kundli/dto/kundli.dto';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
+import {
+  parseBirthDateTime,
+  getTimezoneOffsetFromLongitude,
+} from '../common/utils/birth-time.util';
 
 @Injectable()
 export class NatalChartService {
@@ -13,28 +18,32 @@ export class NatalChartService {
 
   constructor(
     private readonly astrologyEngineService: AstrologyEngineService,
+    private readonly swissEphemerisService: SwissEphemerisService,
   ) {}
 
   async getNatalChart(dto: KundliDto) {
     try {
-      const dobDate = new Date(`${dto.dob}T${dto.birthTime}`);
-      const year = dobDate.getFullYear();
-      const month = dobDate.getMonth() + 1;
-      const day = dobDate.getDate();
-      const hour = dobDate.getHours();
-      const minute = dobDate.getMinutes();
-
-      const vedicChart = await this.astrologyEngineService.calculateVedicChart(
-        {
-          year,
-          month,
-          day,
-          hour,
-          minute,
-          latitude: dto.latitude,
-          longitude: dto.longitude,
-        },
+      const { year, month, day, hour, minute, second } = parseBirthDateTime(
+        dto.dob,
+        dto.birthTime,
       );
+      const timezoneOffset = getTimezoneOffsetFromLongitude(dto.longitude);
+      const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        timezoneOffset,
+      );
+
+      const vedicChart =
+        await this.astrologyEngineService.calculateVedicChartFromJulianDay(
+          julianDayUt,
+          dto.latitude,
+          dto.longitude,
+        );
 
       const planetSignList = vedicChart.planets.map((planet) => ({
         planet: planet.planet,

@@ -9,6 +9,9 @@ jest.mock('../common/utils/coordinates.util', () => ({
   getCoordinatesFromCity: jest.fn().mockResolvedValue({ lat: 28.6139, lng: 77.209 }),
 }));
 
+const AUTH_BASE_URL = 'http://localhost:8001';
+const USER_DETAILS_URL = `${AUTH_BASE_URL}/api/v1/user-details/me`;
+
 describe('HoroscopeService', () => {
   let service: HoroscopeService;
   let horoscopeRuleService: HoroscopeRuleService;
@@ -16,7 +19,7 @@ describe('HoroscopeService', () => {
   const mockConfigService = {
     get: jest.fn((key: string) => {
       const config: Record<string, string> = {
-        AUTH_SERVICE_URL: 'http://localhost:8001',
+        AUTH_SERVICE_URL: AUTH_BASE_URL,
       };
       return config[key] ?? null;
     }),
@@ -73,7 +76,7 @@ describe('HoroscopeService', () => {
       const result = await service.getWeeklyHoroscope(mockToken);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8001/api/v1/user-details/me',
+        USER_DETAILS_URL,
         {
           method: 'GET',
           headers: {
@@ -130,7 +133,7 @@ describe('HoroscopeService', () => {
       const result = await service.getMonthlyHoroscope(mockToken);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8001/api/v1/user-details/me',
+        USER_DETAILS_URL,
         {
           method: 'GET',
           headers: {

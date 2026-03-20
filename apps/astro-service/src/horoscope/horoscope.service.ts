@@ -65,12 +65,15 @@ export class HoroscopeService {
         date.setDate(date.getDate() + i);
         const dateString = date.toISOString().split('T')[0];
 
-        const horoscope = await this.horoscopeRuleService.getTodayHoroscope({
-          dob: dobString,
-          birthTime,
-          latitude: coordinates.lat,
-          longitude: coordinates.lng,
-        });
+        const horoscope = await this.horoscopeRuleService.getHoroscopeForDate(
+          {
+            dob: dobString,
+            birthTime,
+            latitude: coordinates.lat,
+            longitude: coordinates.lng,
+          },
+          dateString,
+        );
 
         weeklyPredictions.push({
           date: dateString,
@@ -141,12 +144,15 @@ export class HoroscopeService {
         date.setDate(date.getDate() + i);
         const dateString = date.toISOString().split('T')[0];
 
-        const horoscope = await this.horoscopeRuleService.getTodayHoroscope({
-          dob: dobString,
-          birthTime,
-          latitude: coordinates.lat,
-          longitude: coordinates.lng,
-        });
+        const horoscope = await this.horoscopeRuleService.getHoroscopeForDate(
+          {
+            dob: dobString,
+            birthTime,
+            latitude: coordinates.lat,
+            longitude: coordinates.lng,
+          },
+          dateString,
+        );
 
         monthlyPredictions.push({
           date: dateString,
