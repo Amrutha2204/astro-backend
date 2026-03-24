@@ -717,6 +717,57 @@ export class SwissEphemerisService {
   }
 
   /**
+   * Get solar eclipses within a Julian day range (inclusive by date).
+   */
+  getSolarEclipsesInRange(
+    startJd: number,
+    endJd: number,
+    maxIterations: number = 2000,
+  ): Array<{
+    date: string;
+    maximum: string;
+    type: string;
+  }> {
+    const results: Array<{
+      date: string;
+      maximum: string;
+      type: string;
+    }> = [];
+    let jd = startJd;
+    const ifl = swisseph.SEFLG_SWIEPH;
+    const ifltype = swisseph.SE_ECL_ALLTYPES_SOLAR;
+    const endDateStr = this.jdToUtcDateString(endJd);
+
+    for (let i = 0; i < maxIterations; i++) {
+      try {
+        const r = swisseph.swe_sol_eclipse_when_glob(
+          jd,
+          ifl,
+          ifltype,
+          0 as 0,
+        );
+        if ('error' in r) break;
+        const dateStr = this.jdToUtcDateString(r.maximum);
+        if (dateStr > endDateStr) break;
+        const maxIso = this.jdToUtcIso(r.maximum);
+        let type = 'Partial';
+        if (r.rflag & swisseph.SE_ECL_TOTAL) type = 'Total';
+        else if (r.rflag & swisseph.SE_ECL_ANNULAR) type = 'Annular';
+        else if (r.rflag & swisseph.SE_ECL_ANNULAR_TOTAL) type = 'Hybrid';
+        results.push({
+          date: dateStr,
+          maximum: maxIso,
+          type,
+        });
+        jd = r.maximum + 1;
+      } catch {
+        break;
+      }
+    }
+    return results;
+  }
+
+  /**
    * Get next N lunar eclipses from a start date (global).
    */
   getNextLunarEclipses(
@@ -782,5 +833,74 @@ export class SwissEphemerisService {
     }
     return results;
   }
-}
 
+  /**
+   * Get lunar eclipses within a Julian day range (inclusive by date).
+   */
+  getLunarEclipsesInRange(
+    startJd: number,
+    endJd: number,
+    maxIterations: number = 2000,
+  ): Array<{
+    date: string;
+    maximum: string;
+    type: string;
+    umbralMagnitude?: number;
+    penumbralMagnitude?: number;
+    sarosNumber?: number;
+    sarosMember?: number;
+  }> {
+    const results: Array<{
+      date: string;
+      maximum: string;
+      type: string;
+      umbralMagnitude?: number;
+      penumbralMagnitude?: number;
+      sarosNumber?: number;
+      sarosMember?: number;
+    }> = [];
+    let jd = startJd;
+    const ifl = swisseph.SEFLG_SWIEPH;
+    const ifltype = swisseph.SE_ECL_ALLTYPES_LUNAR;
+    const endDateStr = this.jdToUtcDateString(endJd);
+
+    for (let i = 0; i < maxIterations; i++) {
+      try {
+        const r = swisseph.swe_lun_eclipse_when(jd, ifl, ifltype, 0 as 0);
+        if ('error' in r) break;
+        const dateStr = this.jdToUtcDateString(r.maximum);
+        if (dateStr > endDateStr) break;
+        const maxIso = this.jdToUtcIso(r.maximum);
+        let type = 'Penumbral';
+        if (r.rflag & swisseph.SE_ECL_TOTAL) type = 'Total';
+        else if (r.rflag & swisseph.SE_ECL_PARTIAL) type = 'Partial';
+        const how = swisseph.swe_lun_eclipse_how(
+          r.maximum,
+          ifl,
+          0,
+          0,
+          0,
+        );
+        const umbralMagnitude =
+          how && !('error' in how) ? how.umbralMagnitude : undefined;
+        const penumbralMagnitude =
+          how && !('error' in how) ? how.penumbralMagnitude : undefined;
+        const sarosNumber = how && !('error' in how) ? how.sarosNumber : undefined;
+        const sarosMember = how && !('error' in how) ? how.sarosMember : undefined;
+        results.push({
+          date: dateStr,
+          maximum: maxIso,
+          type,
+          umbralMagnitude,
+          penumbralMagnitude,
+          sarosNumber,
+          sarosMember,
+        });
+        jd = r.maximum + 1;
+      } catch {
+        break;
+      }
+    }
+    return results;
+  }
+}

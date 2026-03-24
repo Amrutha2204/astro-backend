@@ -148,7 +148,7 @@ export class TransitsController {
   @Get('transits/eclipses')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get upcoming solar and lunar eclipses from a start date',
+    summary: 'Get solar and lunar eclipses for a date range',
   })
   @ApiQuery({
     name: 'fromDate',
@@ -157,19 +157,51 @@ export class TransitsController {
     example: '2025-01-01',
   })
   @ApiQuery({
+    name: 'toDate',
+    required: false,
+    description:
+      'End date YYYY-MM-DD. If provided, results are filtered to range and paginated.',
+    example: '2025-12-31',
+  })
+  @ApiQuery({
     name: 'limit',
     required: false,
     description: 'Max number of solar and lunar eclipses each (default 10)',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (starts at 1). Used when toDate is provided.',
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description:
+      'Items per page (default 20, max 100). Used when toDate is provided.',
+  })
   @ApiOkResponse({ description: 'Solar and lunar eclipse lists' })
   async getEclipses(
     @Query('fromDate') fromDate: string,
+    @Query('toDate') toDate?: string,
     @Query('limit') limit?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
     if (!fromDate?.trim()) {
       throw new HttpException(
         'fromDate is required (YYYY-MM-DD).',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+    const hasToDate = toDate != null && toDate.trim() !== '';
+    if (hasToDate) {
+      const p = page ? parseInt(page, 10) : 1;
+      const ps = pageSize ? parseInt(pageSize, 10) : 20;
+      return this.transitsService.getEclipsesInRange(
+        fromDate.trim(),
+        toDate.trim(),
+        p,
+        ps,
       );
     }
     const n = limit ? Math.min(parseInt(limit, 10) || 10, 20) : 10;
@@ -232,4 +264,3 @@ export class TransitsController {
     );
   }
 }
-
