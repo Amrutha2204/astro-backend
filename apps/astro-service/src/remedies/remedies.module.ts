@@ -4,10 +4,9 @@ import { RemediesController } from './remedies.controller';
 import { RemediesService } from './remedies.service';
 import { AstrologyEngineModule } from '../astrology-engine/astrology-engine.module';
 import { CalendarModule } from '../calendar/calendar.module';
-import { AuthClientModule } from '../common/auth-client.module';
 
 @Module({
-  imports: [ConfigModule, AstrologyEngineModule, CalendarModule, AuthClientModule],
+  imports: [ConfigModule, AstrologyEngineModule, CalendarModule],
   controllers: [RemediesController],
   providers: [RemediesService],
   exports: [RemediesService],

@@ -1,0 +1,15 @@
+version: 2
+
+# Replace this with your real Ngrok auth token
+# You can get it from https://dashboard.ngrok.com/get-started/your-authtoken
+authtoken: 32SV6t0axXB423k42BAXyCC6Dlq_2Da2DFzw9dkgCcc2Dagh
+
+tunnels:
+  auth-service:
+    addr: 8001
+    proto: http
+
+  astro-service:
+    addr: 8002
+    proto: http
+

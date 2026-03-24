@@ -39,13 +39,7 @@ export class CalendarService {
       const sunPlanet = planets.find((p) => p.planet === 'Sun');
 
       const moonPhase = this.calculateMoonPhase(moonPlanet, sunPlanet);
-      const jdNoonUt = this.swissEphemerisService.localTimeToJulianDayUt(
-        year, month, day, 12, 0, 0, 0,
-      );
-      const moonSidereal = moonPlanet?.longitude != null
-        ? this.swissEphemerisService.convertToSidereal(moonPlanet.longitude, jdNoonUt)
-        : 0;
-      const nakshatra = this.getNakshatraFromLongitude(moonSidereal);
+      const nakshatra = this.getNakshatraFromLongitude(moonPlanet?.longitude || 0);
       const { tithi, paksha } = this.calculateTithiAndPaksha(moonPlanet, sunPlanet);
 
       const dateStr = new Date().toISOString().split('T')[0];
@@ -74,12 +68,12 @@ export class CalendarService {
       };
 
       if (sunRiseSet && !('error' in sunRiseSet)) {
-        out.sunrise = this.utcTimeToLocal(sunRiseSet.sunrise, longitude);
-        out.sunset = this.utcTimeToLocal(sunRiseSet.sunset, longitude);
+        out.sunrise = sunRiseSet.sunrise;
+        out.sunset = sunRiseSet.sunset;
       }
       if (moonRiseSet && !('error' in moonRiseSet)) {
-        out.moonRise = this.utcTimeToLocal(moonRiseSet.moonRise, longitude);
-        out.moonSet = this.utcTimeToLocal(moonRiseSet.moonSet, longitude);
+        out.moonRise = moonRiseSet.moonRise;
+        out.moonSet = moonRiseSet.moonSet;
       }
 
       return out;
@@ -162,19 +156,6 @@ export class CalendarService {
   private getNakshatraFromLongitude(longitude: number): string {
     const nakshatraIndex = Math.floor(longitude / (360 / 27));
     return NAKSHATRAS[nakshatraIndex % 27];
-  }
-
-  /** Convert UTC time "HH:mm" to local time at longitude (e.g. for sunrise/sunset display). */
-  private utcTimeToLocal(utcHHmm: string, longitude: number): string {
-    const [h = 0, m = 0] = utcHHmm.split(':').map(Number);
-    const utcMins = h * 60 + m;
-    const offsetHours = longitude / 15;
-    let localMins = utcMins + Math.round(offsetHours * 60);
-    if (localMins < 0) localMins += 24 * 60;
-    if (localMins >= 24 * 60) localMins %= 24 * 60;
-    const lh = Math.floor(localMins / 60) % 24;
-    const lm = Math.floor(localMins % 60);
-    return `${String(lh).padStart(2, '0')}:${String(lm).padStart(2, '0')}`;
   }
 
   private isAuspiciousDay(planets: any[]): boolean {
@@ -262,17 +243,17 @@ export class CalendarService {
 
     return {
       date,
-      sunrise: this.utcTimeToLocal(riseSet.sunrise, longitude),
-      sunset: this.utcTimeToLocal(riseSet.sunset, longitude),
-      solarNoon: this.utcTimeToLocal(riseSet.transit, longitude),
+      sunrise: riseSet.sunrise,
+      sunset: riseSet.sunset,
+      solarNoon: riseSet.transit,
       abhijitMuhurat: {
-        start: this.utcTimeToLocal(minsToTime(abhijitStart), longitude),
-        end: this.utcTimeToLocal(minsToTime(abhijitEnd), longitude),
+        start: minsToTime(abhijitStart),
+        end: minsToTime(abhijitEnd),
       },
       goodPeriods: [
-        { name: 'Sunrise period', start: this.utcTimeToLocal(riseSet.sunrise, longitude), end: this.utcTimeToLocal(minsToTime(transitMinutes - 60), longitude) },
-        { name: 'Abhijit Muhurat', start: this.utcTimeToLocal(minsToTime(abhijitStart), longitude), end: this.utcTimeToLocal(minsToTime(abhijitEnd), longitude) },
-        { name: 'Afternoon period', start: this.utcTimeToLocal(minsToTime(abhijitEnd), longitude), end: this.utcTimeToLocal(riseSet.sunset, longitude) },
+        { name: 'Sunrise period', start: riseSet.sunrise, end: minsToTime(transitMinutes - 60) },
+        { name: 'Abhijit Muhurat', start: minsToTime(abhijitStart), end: minsToTime(abhijitEnd) },
+        { name: 'Afternoon period', start: minsToTime(abhijitEnd), end: riseSet.sunset },
       ],
     };
   }
@@ -416,16 +397,16 @@ export class CalendarService {
 
     return {
       date,
-      sunrise: this.utcTimeToLocal(riseSet.sunrise, longitude),
-      sunset: this.utcTimeToLocal(riseSet.sunset, longitude),
+      sunrise: riseSet.sunrise,
+      sunset: riseSet.sunset,
       rahuKaal: {
-        start: this.utcTimeToLocal(minsToTime(periodStart(rahuKaalPeriod)), longitude),
-        end: this.utcTimeToLocal(minsToTime(periodEnd(rahuKaalPeriod)), longitude),
+        start: minsToTime(periodStart(rahuKaalPeriod)),
+        end: minsToTime(periodEnd(rahuKaalPeriod)),
         note: 'Considered inauspicious for starting important work. Traditional practice: avoid new ventures during this period.',
       },
       yamagandam: {
-        start: this.utcTimeToLocal(minsToTime(periodStart(yamagandamPeriod)), longitude),
-        end: this.utcTimeToLocal(minsToTime(periodEnd(yamagandamPeriod)), longitude),
+        start: minsToTime(periodStart(yamagandamPeriod)),
+        end: minsToTime(periodEnd(yamagandamPeriod)),
         note: 'Inauspicious period (Yama Ghantam). Often avoided for important undertakings.',
       },
       source: 'Swiss Ephemeris',
@@ -459,10 +440,6 @@ export class CalendarService {
       majorEvents.push('Auspicious day');
     }
     const { tithi, paksha } = this.calculateTithiAndPaksha(moonPlanet, sunPlanet);
-    const jdNoonUt = this.swissEphemerisService.localTimeToJulianDayUt(y, m, d, 12, 0, 0, 0);
-    const moonSidereal = moonPlanet?.longitude != null
-      ? this.swissEphemerisService.convertToSidereal(moonPlanet.longitude, jdNoonUt)
-      : 0;
     const sunRiseSet = this.swissEphemerisService.getSunRiseSetTransit(
       y, m, d, longitude, latitude,
     );
@@ -474,7 +451,7 @@ export class CalendarService {
       moonPhase: this.calculateMoonPhase(moonPlanet, sunPlanet),
       tithi,
       paksha,
-      nakshatra: this.getNakshatraFromLongitude(moonSidereal),
+      nakshatra: this.getNakshatraFromLongitude(moonPlanet?.longitude || 0),
       ritu: this.getRituFromDate(y, m, d),
       hinduMonth: this.getHinduMonthFromDate(y, m, d),
       majorPlanetaryEvents: majorEvents.length > 0 ? majorEvents : ['No major events'],
@@ -482,12 +459,12 @@ export class CalendarService {
       source: 'Swiss Ephemeris',
     };
     if (sunRiseSet && !('error' in sunRiseSet)) {
-      out.sunrise = this.utcTimeToLocal(sunRiseSet.sunrise, longitude);
-      out.sunset = this.utcTimeToLocal(sunRiseSet.sunset, longitude);
+      out.sunrise = sunRiseSet.sunrise;
+      out.sunset = sunRiseSet.sunset;
     }
     if (moonRiseSet && !('error' in moonRiseSet)) {
-      out.moonRise = this.utcTimeToLocal(moonRiseSet.moonRise, longitude);
-      out.moonSet = this.utcTimeToLocal(moonRiseSet.moonSet, longitude);
+      out.moonRise = moonRiseSet.moonRise;
+      out.moonSet = moonRiseSet.moonSet;
     }
     return out;
   }

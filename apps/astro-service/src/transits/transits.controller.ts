@@ -148,13 +148,19 @@ export class TransitsController {
   @Get('transits/eclipses')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get upcoming solar and lunar eclipses from a start date',
+    summary: 'Get solar and lunar eclipses in a date range',
   })
   @ApiQuery({
     name: 'fromDate',
     required: true,
-    description: 'Start date to search from YYYY-MM-DD',
+    description: 'Start date YYYY-MM-DD',
     example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    description: 'End date YYYY-MM-DD (eclipses after this date are excluded)',
+    example: '2030-12-31',
   })
   @ApiQuery({
     name: 'limit',
@@ -164,6 +170,7 @@ export class TransitsController {
   @ApiOkResponse({ description: 'Solar and lunar eclipse lists' })
   async getEclipses(
     @Query('fromDate') fromDate: string,
+    @Query('toDate') toDate?: string,
     @Query('limit') limit?: string,
   ) {
     if (!fromDate?.trim()) {
@@ -172,8 +179,12 @@ export class TransitsController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const n = limit ? Math.min(parseInt(limit, 10) || 10, 20) : 10;
-    return this.transitsService.getEclipses(fromDate.trim(), n);
+    const n = limit ? Math.min(parseInt(limit, 10) || 10, 50) : 10;
+    return this.transitsService.getEclipses(
+      fromDate.trim(),
+      toDate?.trim(),
+      n,
+    );
   }
 
   @Get('transits/major')

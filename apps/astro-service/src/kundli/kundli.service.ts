@@ -7,7 +7,7 @@ import {
 import { KundliDto } from './dto/kundli.dto';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
 import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
-import { DIVISIONAL_CHARTS, HOUSE_MEANINGS, HOUSE_MEANINGS_DETAIL } from '../common/constants/astrology.constants';
+import { DIVISIONAL_CHARTS, HOUSE_MEANINGS } from '../common/constants/astrology.constants';
 import {
   parseBirthDateTime,
   getTimezoneOffsetFromLongitude,
@@ -82,7 +82,6 @@ export class KundliService {
           sign: h.sign,
           degree: h.degree,
           meaning: HOUSE_MEANINGS[h.house] ?? '',
-          meaningDetail: HOUSE_MEANINGS_DETAIL[h.house] ?? '',
         })),
         source: 'Swiss Ephemeris',
       };
