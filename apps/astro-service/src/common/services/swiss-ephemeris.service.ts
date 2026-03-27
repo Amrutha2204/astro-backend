@@ -670,10 +670,12 @@ export class SwissEphemerisService {
 
   /**
    * Get next N solar eclipses from a start date (global).
+   * If endJd is set, only eclipses with maximum <= endJd are included.
    */
   getNextSolarEclipses(
     startJd: number,
     limit: number,
+    endJd?: number,
   ): Array<{
     date: string;
     maximum: string;
@@ -697,6 +699,7 @@ export class SwissEphemerisService {
           0 as 0,
         );
         if ('error' in r) break;
+        if (endJd != null && r.maximum > endJd) break;
         const dateStr = this.jdToUtcDateString(r.maximum);
         const maxIso = this.jdToUtcIso(r.maximum);
         let type = 'Partial';
@@ -769,10 +772,12 @@ export class SwissEphemerisService {
 
   /**
    * Get next N lunar eclipses from a start date (global).
+   * If endJd is set, only eclipses with maximum <= endJd are included.
    */
   getNextLunarEclipses(
     startJd: number,
     limit: number,
+    endJd?: number,
   ): Array<{
     date: string;
     maximum: string;
@@ -799,6 +804,7 @@ export class SwissEphemerisService {
       try {
         const r = swisseph.swe_lun_eclipse_when(jd, ifl, ifltype, 0 as 0);
         if ('error' in r) break;
+        if (endJd != null && r.maximum > endJd) break;
         const dateStr = this.jdToUtcDateString(r.maximum);
         const maxIso = this.jdToUtcIso(r.maximum);
         let type = 'Penumbral';

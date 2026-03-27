@@ -153,7 +153,7 @@ export class TransitsController {
   @ApiQuery({
     name: 'fromDate',
     required: true,
-    description: 'Start date to search from YYYY-MM-DD',
+    description: 'Start date YYYY-MM-DD',
     example: '2025-01-01',
   })
   @ApiQuery({

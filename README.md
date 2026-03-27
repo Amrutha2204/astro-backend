@@ -53,25 +53,6 @@ Each service uses `TypeOrmModule.forRootAsync` with Postgres. Connection details
 - Auth: `GET /health` -> `{ "status": "ok", "service": "auth-service" }`
 - Astro: `GET /health` -> `{ "status": "ok", "service": "astro-service" }`
 
-## ngrok (one agent, two tunnels)
-
-Free ngrok allows only **1 simultaneous agent**. To expose both auth (8001) and astro (8002) at once:
-
-1. Add the `tunnels` block from `ngrok.example.yml` to your ngrok config (e.g. `~/.config/ngrok/ngrok.yml` on Linux). Ensure your `authtoken` is set there.
-2. Start the backend: `npm run start`.
-3. Run: **`ngrok start --all`** (one process, two URLs).
-
-Share the two URLs with the frontend (or mobile) as `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_ASTRO_API_URL`.
-
-## Mobile / other clients (run without backend locally)
-
-A mobile app (or any client) can talk to **deployed** or **staging** APIs so the dev does not need to run the backend locally.
-
-- **Auth API:** base URL e.g. `https://auth.your-domain.com` (or staging). Default local: `http://localhost:8001`
-- **Astro API:** base URL e.g. `https://astro.your-domain.com` (or staging). Default local: `http://localhost:8002`
-
-Use **env or app config** (e.g. `API_AUTH_BASE`, `API_ASTRO_BASE`) and point them to the same URLs the web app uses in production/staging. Then the mobile dev can run only the app and have all API calls work against that backend.
-
 ## Notes
 - Logger timestamps are IST formatted.
 - Remote transports/migrations are not configured in this repo.

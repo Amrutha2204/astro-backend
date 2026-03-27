@@ -289,22 +289,27 @@ export class TransitsService {
   }
 
   /**
-   * Get upcoming solar and lunar eclipses.
+   * Get solar and lunar eclipses in a date range.
+   * If toDate is provided, only eclipses on or before toDate are returned.
    */
   async getEclipses(
     fromDate: string,
+    toDate?: string,
     limit: number = 10,
   ): Promise<{
     fromDate: string;
+    toDate?: string;
     solar: Array<{
       date: string;
       maximum: string;
       type: string;
+      description: string;
     }>;
     lunar: Array<{
       date: string;
       maximum: string;
       type: string;
+      description: string;
       umbralMagnitude?: number;
       penumbralMagnitude?: number;
       sarosNumber?: number;
@@ -318,17 +323,42 @@ export class TransitsService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    let endJd: number | undefined;
+    if (toDate?.trim()) {
+      const to = this.parseDate(toDate);
+      if (!to || from > to) {
+        throw new HttpException(
+          'Invalid toDate. Use YYYY-MM-DD with toDate >= fromDate.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      // dateStringToJulianDay uses 12:00 UT; add ~12h so the full "toDate"
+      // is included (up to just before next day).
+      endJd = this.swissEphemerisService.dateStringToJulianDay(toDate) + 0.49999;
+    }
+    const maxLimit = Math.min(limit, 50);
     const jd = this.swissEphemerisService.dateStringToJulianDay(fromDate);
-    const solar = this.swissEphemerisService.getNextSolarEclipses(
+    const solarRaw = this.swissEphemerisService.getNextSolarEclipses(
       jd,
-      Math.min(limit, 20),
+      maxLimit,
+      endJd,
     );
-    const lunar = this.swissEphemerisService.getNextLunarEclipses(
+    const lunarRaw = this.swissEphemerisService.getNextLunarEclipses(
       jd,
-      Math.min(limit, 20),
+      maxLimit,
+      endJd,
     );
+    const solar = solarRaw.map((e) => ({
+      ...e,
+      description: `${e.type} solar eclipse`,
+    }));
+    const lunar = lunarRaw.map((e) => ({
+      ...e,
+      description: `${e.type} lunar eclipse`,
+    }));
     return {
-      fromDate: fromDate,
+      fromDate,
+      ...(toDate?.trim() && { toDate: toDate.trim() }),
       solar,
       lunar,
     };

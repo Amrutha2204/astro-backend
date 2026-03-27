@@ -22,15 +22,11 @@ import { getCoordinatesFromCity } from '../common/utils/coordinates.util';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { GuestKundliRequestDto } from '../kundli/dto/guest-kundli.dto';
-import { AuthClientService } from '../common/services/auth-client.service';
 
 @Controller('api/v1/dasha')
 @ApiTags('Dasha')
 export class DashaController {
-  constructor(
-    private readonly dashaService: DashaService,
-    private readonly authClient: AuthClientService,
-  ) {}
+  constructor(private readonly dashaService: DashaService) {}
 
   @Post('guest')
   @HttpCode(HttpStatus.OK)
@@ -107,9 +103,29 @@ export class DashaController {
   })
   async getCurrentDasha(@CurrentUser() user: any) {
     const token = user.token;
+    const authServiceUrl =
+      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
     try {
-      const userDetails = await this.authClient.getMe(token);
+      const userDetailsResponse = await fetch(
+        `${authServiceUrl}/api/v1/user-details/me`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      );
+
+      if (!userDetailsResponse.ok) {
+        throw new HttpException(
+          'Failed to fetch user details.',
+          userDetailsResponse.status,
+        );
+      }
+
+      const userDetails = await userDetailsResponse.json();
 
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException(
@@ -169,9 +185,29 @@ export class DashaController {
     @Query('years') years?: number,
   ) {
     const token = user.token;
+    const authServiceUrl =
+      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
     try {
-      const userDetails = await this.authClient.getMe(token);
+      const userDetailsResponse = await fetch(
+        `${authServiceUrl}/api/v1/user-details/me`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      );
+
+      if (!userDetailsResponse.ok) {
+        throw new HttpException(
+          'Failed to fetch user details.',
+          userDetailsResponse.status,
+        );
+      }
+
+      const userDetails = await userDetailsResponse.json();
 
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException(
