@@ -365,6 +365,92 @@ export class TransitsService {
   }
 
   /**
+   * Get solar and lunar eclipses within a date range, with pagination.
+   */
+  async getEclipsesInRange(
+    fromDate: string,
+    toDate: string,
+    page: number = 1,
+    pageSize: number = 20,
+  ): Promise<{
+    fromDate: string;
+    toDate: string;
+    page: number;
+    pageSize: number;
+    solarTotal: number;
+    lunarTotal: number;
+    solarTotalPages: number;
+    lunarTotalPages: number;
+    solar: Array<{
+      date: string;
+      maximum: string;
+      type: string;
+    }>;
+    lunar: Array<{
+      date: string;
+      maximum: string;
+      type: string;
+      umbralMagnitude?: number;
+      penumbralMagnitude?: number;
+      sarosNumber?: number;
+      sarosMember?: number;
+    }>;
+  }> {
+    const from = this.parseDate(fromDate);
+    const to = this.parseDate(toDate);
+    if (!from || !to || from > to) {
+      throw new HttpException(
+        'Invalid date range. Use YYYY-MM-DD with fromDate <= toDate.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+    const safePageSize =
+      Number.isFinite(pageSize) && pageSize > 0
+        ? Math.min(Math.floor(pageSize), 100)
+        : 20;
+
+    const startJd = this.swissEphemerisService.dateStringToJulianDay(fromDate);
+    const endJd = this.swissEphemerisService.dateStringToJulianDay(toDate);
+
+    const solarAll = this.swissEphemerisService.getSolarEclipsesInRange(
+      startJd,
+      endJd,
+    );
+    const lunarAll = this.swissEphemerisService.getLunarEclipsesInRange(
+      startJd,
+      endJd,
+    );
+
+    const solarTotal = solarAll.length;
+    const lunarTotal = lunarAll.length;
+    const solarTotalPages = Math.max(
+      1,
+      Math.ceil(solarTotal / safePageSize),
+    );
+    const lunarTotalPages = Math.max(
+      1,
+      Math.ceil(lunarTotal / safePageSize),
+    );
+    const solar = this.paginate(solarAll, safePage, safePageSize);
+    const lunar = this.paginate(lunarAll, safePage, safePageSize);
+
+    return {
+      fromDate,
+      toDate,
+      page: safePage,
+      pageSize: safePageSize,
+      solarTotal,
+      lunarTotal,
+      solarTotalPages,
+      lunarTotalPages,
+      solar,
+      lunar,
+    };
+  }
+
+  /**
    * Get major transits: when Jupiter, Saturn (and optionally other slow planets) change signs.
    */
   async getMajorTransits(
@@ -480,5 +566,11 @@ export class TransitsService {
 
   private formatDate(y: number, m: number, d: number): string {
     return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+
+  private paginate<T>(items: T[], page: number, pageSize: number): T[] {
+    const start = (page - 1) * pageSize;
+    if (start >= items.length) return [];
+    return items.slice(start, start + pageSize);
   }
 }
