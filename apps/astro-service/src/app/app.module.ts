@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
 import { LoggerModule } from '@astro/logger';
+import { AuthClientModule } from '../common/auth-client.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HoroscopeModule } from '../horoscope/horoscope.module';
@@ -17,14 +20,26 @@ import { DoshaModule } from '../dosha/dosha.module';
 import { CompatibilityModule } from '../compatibility/compatibility.module';
 import { RemediesModule } from '../remedies/remedies.module';
 import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
+import { ShareableCardModule } from '../shareable-card/shareable-card.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { PaymentModule } from '../payment/payment.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
+import { PremiumReportsModule } from '../premium-reports/premium-reports.module';
+import { AdminModule } from '../admin/admin.module';
+import { FamilyProfileModule } from '../family-profile/family-profile.module';
+import { CareerModule } from '../career/career.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [join(process.cwd(), 'apps/astro-service/.env')],
+      envFilePath: [
+        join(process.cwd(), 'apps/astro-service/.env'),
+        join(process.cwd(), '.env'),
+      ],
     }),
     LoggerModule.forRoot('astro-service'),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -38,6 +53,21 @@ import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
         synchronize: false,
       }),
     }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        ({
+          secret:
+            config.get<string>('JWT_SECRET') ||
+            process.env.JWT_SECRET ||
+            undefined,
+          signOptions: {
+            expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? process.env.JWT_EXPIRES_IN ?? '1h',
+          },
+        }) as JwtModuleOptions,
+    }),
+    AuthClientModule,
     HoroscopeModule,
     KundliModule,
     NatalChartModule,
@@ -50,6 +80,14 @@ import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
     CompatibilityModule,
     RemediesModule,
     AiAssistantModule,
+    ShareableCardModule,
+    NotificationsModule,
+    PaymentModule,
+    SubscriptionModule,
+    PremiumReportsModule,
+    AdminModule,
+    FamilyProfileModule,
+    CareerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

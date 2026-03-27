@@ -8,6 +8,7 @@ export interface GunaMilanResult {
     score: number;
     maxScore: number;
     description: string;
+    parameterMeaning?: string;
   }>;
 }
 

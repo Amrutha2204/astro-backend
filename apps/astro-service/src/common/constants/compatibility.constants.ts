@@ -72,3 +72,15 @@ export const GANA_MAP: Record<string, string> = {
   'Uttara Ashadha': 'Manushya', Shravana: 'Deva', Dhanishta: 'Rakshasa', Shatabhisha: 'Rakshasa',
   'Purva Bhadrapada': 'Manushya', 'Uttara Bhadrapada': 'Manushya', Revati: 'Deva',
 };
+
+/** Full explanation of each Guna Milan parameter (for compatibility modal). */
+export const GUNA_PARAMETER_MEANINGS: Record<string, string> = {
+  Varna: 'Varna represents the compatibility of the couple\'s social and spiritual values based on their Sun signs. It is derived from the four varnas (Brahmin, Kshatriya, Vaishya, Shudra) and indicates harmony in outlook and life goals.',
+  Vashya: 'Vashya indicates mutual attraction and control dynamics between partners based on their Moon signs. It is derived from five animal groups and reflects how well the couple can influence and understand each other.',
+  Tara: 'Tara (star) is calculated from the couple\'s birth nakshatras in the 9-point system. It indicates destiny compatibility and whether the marriage will be favorable, neutral, or challenging in terms of longevity and happiness.',
+  Yoni: 'Yoni represents sexual and emotional compatibility based on the nakshatra-derived animal symbols. Compatible yoni pairs suggest harmony in intimacy and temperament; incompatible pairs may need understanding and remedies.',
+  'Graha Maitri': 'Graha Maitri (planetary friendship) is based on the Moon signs of both partners. It reflects mental compatibility, mutual respect, and whether the couple will be natural friends, neutral, or at odds in daily life.',
+  Gana: 'Gana divides nakshatras into Deva (divine), Manushya (human), and Rakshasa (demonic) groups. Same or compatible gana suggests harmony; Deva-Rakshasa match is considered inauspicious and may require remedies.',
+  Bhakoot: 'Bhakoot is derived from the Moon signs of both partners. Certain sign combinations (6th, 8th, or 12th from each other) create Bhakoot dosha, which may indicate challenges in financial or emotional compatibility if not remedied.',
+  Nadi: 'Nadi is based on the nakshatra grouping into Vata, Pitta, and Kapha (the three nadis). Same Nadi is considered a serious dosha affecting health and progeny; different Nadis indicate good compatibility in these areas.',
+};

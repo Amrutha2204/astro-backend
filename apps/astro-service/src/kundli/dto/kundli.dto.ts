@@ -44,12 +44,20 @@ export class KundliDto {
   longitude: number;
 
   @ApiPropertyOptional({
-    description: 'Chart type',
+    description: 'Chart type (diagram style)',
     enum: ChartType,
     default: ChartType.NorthIndian,
   })
   @IsOptional()
   @IsEnum(ChartType)
   chartType?: ChartType;
+
+  @ApiPropertyOptional({
+    description: 'Which chart to show: lagna (D-1), navamsa (D-9), saptamsa (D-7), dasamsa (D-10), etc. Only for Vedic.',
+    example: 'lagna',
+  })
+  @IsOptional()
+  @IsString()
+  chart?: string;
 }
 

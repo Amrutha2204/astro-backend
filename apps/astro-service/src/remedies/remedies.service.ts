@@ -7,7 +7,9 @@ import {
   NAKSHATRA_FASTING_MAP,
 } from '../common/constants/remedies.constants';
 import { AstrologyEngineService } from '../astrology-engine/astrology-engine.service';
+import { SwissEphemerisService } from '../common/services/swiss-ephemeris.service';
 import { CalendarService } from '../calendar/calendar.service';
+import { getTimezoneOffsetFromLongitude } from '../common/utils/birth-time.util';
 import type { Remedy, RemedyRecommendations } from './interfaces/remedies.interface';
 
 export type { Remedy, RemedyRecommendations } from './interfaces/remedies.interface';
@@ -18,6 +20,7 @@ export class RemediesService {
 
   constructor(
     private readonly astrologyEngineService: AstrologyEngineService,
+    private readonly swissEphemerisService: SwissEphemerisService,
     private readonly calendarService: CalendarService,
   ) {}
 
@@ -31,15 +34,22 @@ export class RemediesService {
     longitude: number,
   ): Promise<RemedyRecommendations> {
     try {
-      const vedicChart = await this.astrologyEngineService.calculateVedicChart({
+      const timezoneOffset = getTimezoneOffsetFromLongitude(longitude);
+      const julianDayUt = this.swissEphemerisService.localTimeToJulianDayUt(
         year,
         month,
         day,
         hour,
         minute,
-        latitude,
-        longitude,
-      });
+        0,
+        timezoneOffset,
+      );
+      const vedicChart =
+        await this.astrologyEngineService.calculateVedicChartFromJulianDay(
+          julianDayUt,
+          latitude,
+          longitude,
+        );
 
       const gemstones = this.getGemstoneRecommendations(vedicChart);
       const mantras = this.getMantraRecommendations(vedicChart);

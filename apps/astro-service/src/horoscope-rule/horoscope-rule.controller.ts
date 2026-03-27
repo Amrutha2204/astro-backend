@@ -22,11 +22,15 @@ import { ChartType, getCoordinatesFromCity } from '../common/utils/coordinates.u
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { GuestKundliRequestDto } from '../kundli/dto/guest-kundli.dto';
+import { AuthClientService } from '../common/services/auth-client.service';
 
 @Controller('api/v1/astrology')
 @ApiTags('Astrology')
 export class HoroscopeRuleController {
-  constructor(private readonly horoscopeRuleService: HoroscopeRuleService) {}
+  constructor(
+    private readonly horoscopeRuleService: HoroscopeRuleService,
+    private readonly authClient: AuthClientService,
+  ) {}
 
   @Post('horoscope/today/guest')
   @HttpCode(HttpStatus.OK)
@@ -66,6 +70,8 @@ export class HoroscopeRuleController {
         dayType: 'Good',
         mainTheme: 'Focus on opportunities and growth',
         reason: "Today's planetary positions influence your Moon sign",
+        doAvoid: 'Do: Take important decisions, start new work. Avoid: Overcommitting.',
+        goodTime: 'Good time: Morning and late afternoon for key tasks.',
         date: '2024-01-15',
         source: 'Rule-Based Logic',
       },
@@ -76,41 +82,9 @@ export class HoroscopeRuleController {
     @Query('chartType') chartType?: ChartType,
   ) {
     const token = user.token;
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || 'http://localhost:8001';
 
     try {
-      const userDetailsResponse = await fetch(
-        `${authServiceUrl}/api/v1/user-details/me`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        },
-      );
-
-      if (!userDetailsResponse.ok) {
-        if (userDetailsResponse.status === 401) {
-          throw new HttpException(
-            'Invalid or expired token. Please login again.',
-            HttpStatus.UNAUTHORIZED,
-          );
-        }
-        if (userDetailsResponse.status === 404) {
-          throw new HttpException(
-            'Birth details not found. Please complete your profile first.',
-            HttpStatus.NOT_FOUND,
-          );
-        }
-        throw new HttpException(
-          'Failed to fetch user details.',
-          userDetailsResponse.status,
-        );
-      }
-
-      const userDetails = await userDetailsResponse.json();
+      const userDetails = await this.authClient.getMe(token);
 
       if (!userDetails.dob || !userDetails.birthPlace) {
         throw new HttpException(

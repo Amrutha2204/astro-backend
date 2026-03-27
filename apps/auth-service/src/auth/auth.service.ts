@@ -66,6 +66,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const userDetails = await this.userDetailsService.findByUserId(user.id);
+
     const payload: JwtPayload = {
       sub: user.id,
       roleId: user.roleId,
@@ -90,6 +92,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         roleId: user.roleId,
+        birthPlace: userDetails?.birthPlace ?? null,
       },
     };
   }
