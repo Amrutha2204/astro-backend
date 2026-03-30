@@ -26,7 +26,7 @@ import { AppService } from './app.service';
         password: String(config.get<string>('DB_PASSWORD') ?? ''),
         database: config.get<string>('DB_NAME') ?? '',
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     UsersModule,
