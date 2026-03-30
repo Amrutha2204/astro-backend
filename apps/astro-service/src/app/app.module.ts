@@ -50,7 +50,7 @@ import { CareerModule } from '../career/career.module';
         password: String(config.get<string>('DB_PASSWORD') ?? ''),
         database: config.get<string>('DB_NAME') ?? '',
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     JwtModule.registerAsync({
