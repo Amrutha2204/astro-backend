@@ -68,7 +68,7 @@ async function bootstrap() {
     ],
   });
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   nestLogger.log(`Astro service listening on http://localhost:${port}`);
   nestLogger.log(`Swagger docs available at http://localhost:${port}/api-docs`);
 }
